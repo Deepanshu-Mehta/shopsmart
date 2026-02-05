@@ -1,0 +1,92 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  client:
+    name: Build Client
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./client
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Say Hello
+        run: echo "👋 Hello GitHub Actions!"
+      
+      - name: Show Context Info
+        run: |
+          echo "🔹 Repository: ${{ github.repository }}"
+          echo "🔹 Branch: ${{ github.ref_name }}"
+          echo "🔹 Commit: ${{ github.sha }}"
+          echo "🔹 Actor: ${{ github.actor }}"
+          echo "🔹 Event: ${{ github.event_name }}"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./client/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm run test
+      
+      - name: Check formatting
+        run: npm run format -- --check
+      
+      - name: Build client
+        run: npm run build
+
+  server:
+    name: Build Server
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./server
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Say Hello
+        run: echo "👋 Hello GitHub Actions!"
+      
+      - name: Show Context Info
+        run: |
+          echo "🔹 Repository: ${{ github.repository }}"
+          echo "🔹 Branch: ${{ github.ref_name }}"
+          echo "🔹 Commit: ${{ github.sha }}"
+          echo "🔹 Actor: ${{ github.actor }}"
+          echo "🔹 Event: ${{ github.event_name }}"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./server/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm run test
+      
+      - name: Check formatting
+        run: npm run format -- --check
+      
+      - name: Verify server setup
+        run: node --version && npm --version
