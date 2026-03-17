@@ -149,12 +149,21 @@ log "Verifying installation..."
 
 echo ""
 echo "=========================================="
-echo "  ✓ Setup Complete!"
+echo "  ✓ Setup Complete! Starting servers..."
 echo "=========================================="
 echo ""
-echo "To start development servers:"
-echo "  cd server && npm run dev"
-echo "  cd client && npm run dev"
+echo "  Backend  → http://localhost:$SERVER_PORT"
+echo "  Frontend → http://localhost:$CLIENT_PORT"
+echo ""
+echo "  Press Ctrl+C to stop both servers."
 echo ""
 
-exit 0
+#-------------------------------------------------------------------------------
+# 6. Start Development Servers
+#-------------------------------------------------------------------------------
+trap 'kill 0' SIGINT SIGTERM
+
+(cd server && npm run dev) &
+(cd client && npm run dev -- --port "$CLIENT_PORT") &
+
+wait

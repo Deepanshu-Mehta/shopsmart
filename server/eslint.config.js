@@ -20,4 +20,17 @@ export default [
       'no-console': 'off',
     },
   },
+  {
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it:       'readonly',
+        expect:   'readonly',
+        beforeEach: 'readonly',
+        afterEach:  'readonly',
+        jest:     'readonly',
+      },
+    },
+  },
 ];

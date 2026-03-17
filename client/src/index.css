@@ -1,38 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ─── VESTIR DESIGN TOKENS ───────────────────── */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --color-bg:        #F5F3EF;
+  --color-surface:   #EDEAE3;
+  --color-ink:       #1A1916;
+  --color-muted:     #8C8880;
+  --color-accent:    #C8A96E;
+  --color-invert-bg: #1A1916;
+  --color-invert-fg: #F5F3EF;
+  --border-hairline: 1px solid rgba(26,25,22,0.12);
+  --border-invert:   1px solid rgba(245,243,239,0.12);
+  --font-display:    'Cormorant Garamond', serif;
+  --font-body:       'DM Sans', sans-serif;
+  --ease-out:        cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring:     cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* ─── RESET ──────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+html { scroll-behavior: smooth; cursor: none; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  overflow-x: hidden;
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  margin: 0;
+img, svg { display: block; }
+a { text-decoration: none; color: inherit; }
+button { cursor: none; font-family: var(--font-body); border: none; background: none; }
+ul { list-style: none; }
+
+/* ─── CUSTOM CURSOR ──────────────────────────── */
+.cursor-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 8px; height: 8px;
+  background: var(--color-ink);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  will-change: transform;
+  transition: width 250ms var(--ease-out), height 250ms var(--ease-out), background 250ms;
+}
+.cursor-trail {
+  position: fixed;
+  top: 0; left: 0;
+  width: 32px; height: 32px;
+  border: 1px solid rgba(26,25,22,0.35);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
+  will-change: transform;
+  transition: width 250ms var(--ease-out), height 250ms var(--ease-out), opacity 250ms;
+}
+body.cursor-hover .cursor-dot  { width: 32px; height: 32px; background: var(--color-accent); }
+body.cursor-hover .cursor-trail { width: 8px; height: 8px; opacity: 0; }
+
+/* ─── SCROLL REVEAL ──────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 900ms var(--ease-spring), transform 900ms var(--ease-spring);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+.reveal-grid > * {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 900ms var(--ease-spring), transform 900ms var(--ease-spring);
+}
+.reveal-grid > *:nth-child(1) { transition-delay: 0ms; }
+.reveal-grid > *:nth-child(2) { transition-delay: 120ms; }
+.reveal-grid > *:nth-child(3) { transition-delay: 240ms; }
+.reveal-grid > *:nth-child(4) { transition-delay: 360ms; }
+.reveal-grid.visible > * { opacity: 1; transform: translateY(0); }
+
+/* ─── KEYFRAMES ──────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scrollPulse {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1.0); }
+}
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes cartPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
+/* ─── NAV LINK UNDERLINE ─────────────────────── */
+.nav-link-hover {
+  position: relative;
+  padding-bottom: 2px;
+}
+.nav-link-hover::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 0%;
+  height: 1px;
+  background: var(--color-ink);
+  transition: width 300ms var(--ease-out);
+}
+.nav-link-hover:hover::after { width: 100%; }
+
+/* ─── ACCORDION ──────────────────────────────── */
+.accordion-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 400ms var(--ease-out);
+}
+.accordion-body.open { max-height: 220px; }
+
+/* ─── MOBILE MENU ────────────────────────────── */
+.mobile-overlay {
+  position: fixed; inset: 0;
+  background: var(--color-bg);
+  z-index: 999;
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+  pointer-events: none;
+}
+.mobile-overlay.open {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
 }
 
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.card {
-  padding: 2em;
-}
-
-.status-ok {
-  color: #646cff;
-  font-weight: bold;
-}
+/* ─── PLACEHOLDER GRADIENTS ──────────────────── */
+.p1  { background: linear-gradient(155deg, #D8CEC2, #BFB0A0); }
+.p2  { background: linear-gradient(155deg, #8C8880, #706C66); }
+.p3  { background: linear-gradient(155deg, #C4B8A8, #A89888); }
+.p4  { background: linear-gradient(155deg, #9AA4A0, #7A8882); }
+.p5  { background: linear-gradient(155deg, #C8BEB4, #A8A09A); }
+.p6  { background: linear-gradient(155deg, #B0A898, #988E84); }
+.p7  { background: linear-gradient(155deg, #D0C4B4, #B8AC9C); }
+.p8  { background: linear-gradient(155deg, #A4A89C, #868C80); }
+.p1h { background: linear-gradient(155deg, #C8B8A8, #B0A090); }
+.p2h { background: linear-gradient(155deg, #7A7870, #5E5C58); }
+.p3h { background: linear-gradient(155deg, #B4A898, #9C8E7E); }
+.p4h { background: linear-gradient(155deg, #8A9490, #6A746E); }
+.p5h { background: linear-gradient(155deg, #B8AEA4, #98908A); }
+.p6h { background: linear-gradient(155deg, #A09888, #88807C); }
+.p7h { background: linear-gradient(155deg, #C0B4A4, #A8A08C); }
+.p8h { background: linear-gradient(155deg, #94988C, #787C76); }
+.ep1 { background: linear-gradient(150deg, #C8B09A, #A89078); }
+.ep2 { background: linear-gradient(150deg, #9090A0, #708090); }
+.cat-women { background: linear-gradient(170deg, #C9B99A 0%, #A8937A 100%); }
+.cat-men   { background: linear-gradient(170deg, #8E8880 0%, #6E6860 100%); }
+.cat-ess   { background: linear-gradient(170deg, #C4C0B8 0%, #A8A49C 100%); }
+.cat-sale  { background: linear-gradient(170deg, #B0A898 0%, #D4C8B8 100%); }

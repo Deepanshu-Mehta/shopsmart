@@ -1,38 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, lazy, Suspense } from 'react';
 
-function App() {
-  const [data, setData] = useState(null);
+import Nav             from './components/vestir/Nav';
+import Hero            from './components/vestir/Hero';
+import Ticker          from './components/vestir/Ticker';
+import Categories      from './components/vestir/Categories';
+import ProductGrid     from './components/vestir/ProductGrid';
+import BrandStory      from './components/vestir/BrandStory';
+import Editorial       from './components/vestir/Editorial';
+import Press           from './components/vestir/Press';
+import Newsletter      from './components/vestir/Newsletter';
+import Footer          from './components/vestir/Footer';
+import ProductModal    from './components/vestir/ProductModal';
+import MobileStickyBar from './components/vestir/MobileStickyBar';
 
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    fetch(`${apiUrl}/api/health`)
-      .then((res) => res.json())
-      .then((data) => setData(data))
-      .catch((err) => console.error('Error fetching health check:', err));
-  }, []);
+const Cursor = lazy(() => import('./components/vestir/Cursor'));
+
+export default function App() {
+  const [cartCount, setCartCount]         = useState(0);
+  const [activeProduct, setActiveProduct] = useState(null);
+
+  const addToCart = () => setCartCount(c => c + 1);
 
   return (
-    <div className="container">
-      <h1>ShopSmart</h1>
-      <div className="card">
-        <h2>Backend Status</h2>
-        {data ? (
-          <div>
-            <p>
-              Status: <span className="status-ok">{data.status}</span>
-            </p>
-            <p>Message: {data.message}</p>
-            <p>Timestamp: {data.timestamp}</p>
-          </div>
-        ) : (
-          <p>Loading backend status...</p>
-        )}
-      </div>
-      <p className="hint">
-        Edit <code>src/App.jsx</code> and save to test HMR
-      </p>
-    </div>
+    <>
+      <Suspense fallback={null}>
+        <Cursor />
+      </Suspense>
+      <Nav cartCount={cartCount} />
+      <main>
+        <Hero />
+        <Ticker />
+        <Categories />
+        <ProductGrid
+          onOpenProduct={setActiveProduct}
+          onQuickAdd={addToCart}
+        />
+        <BrandStory />
+        <Editorial onOpenProduct={setActiveProduct} />
+        <Press />
+        <Newsletter />
+      </main>
+      <Footer />
+      <ProductModal
+        product={activeProduct}
+        onClose={() => setActiveProduct(null)}
+        onAddToCart={addToCart}
+      />
+      <MobileStickyBar onAdd={addToCart} />
+    </>
   );
 }
-
-export default App;
