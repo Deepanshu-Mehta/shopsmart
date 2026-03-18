@@ -59,28 +59,42 @@ router.post('/items', async (req, res, next) => {
       return res.status(400).json({ error: 'productId, size, and color are required' });
     }
 
+    const pid = parseInt(productId, 10);
+    const qty = parseInt(quantity, 10);
+
     // Ensure product exists
-    const product = await prisma.product.findUnique({ where: { id: parseInt(productId, 10) } });
+    const product = await prisma.product.findUnique({ where: { id: pid } });
     if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
+    if (isNaN(qty) || qty < 1) {
+      return res.status(400).json({ error: 'quantity must be a positive integer' });
+    }
 
     const cart = await getOrCreateCart(req.user.id);
 
-    const item = await prisma.cartItem.create({
-      data: {
-        cartId: cart.id,
-        productId: parseInt(productId, 10),
-        quantity: parseInt(quantity, 10),
-        size,
-        color,
-      },
-      include: {
-        product: {
-          select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
-        },
-      },
+    const productSelect = {
+      select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+    };
+
+    const [item, isNew] = await prisma.$transaction(async (tx) => {
+      const existing = await tx.cartItem.findFirst({
+        where: { cartId: cart.id, productId: pid, size, color },
+      });
+      if (existing) {
+        const updated = await tx.cartItem.update({
+          where: { id: existing.id },
+          data: { quantity: existing.quantity + qty },
+          include: { product: productSelect },
+        });
+        return [updated, false];
+      }
+      const created = await tx.cartItem.create({
+        data: { cartId: cart.id, productId: pid, quantity: qty, size, color },
+        include: { product: productSelect },
+      });
+      return [created, true];
     });
 
-    res.status(201).json(item);
+    return isNew ? res.status(201).json(item) : res.json(item);
   } catch (err) {
     next(err);
   }
@@ -89,8 +103,8 @@ router.post('/items', async (req, res, next) => {
 // PATCH /api/cart/items/:itemId — update quantity
 router.patch('/items/:itemId', async (req, res, next) => {
   try {
-    const { quantity } = req.body;
-    if (!quantity || quantity < 1) return res.status(400).json({ error: 'quantity must be >= 1' });
+    const qty = parseInt(req.body.quantity, 10);
+    if (isNaN(qty) || qty < 1) return res.status(400).json({ error: 'quantity must be >= 1' });
 
     const existing = await prisma.cartItem.findUnique({
       where: { id: req.params.itemId },
@@ -102,7 +116,7 @@ router.patch('/items/:itemId', async (req, res, next) => {
 
     const updated = await prisma.cartItem.update({
       where: { id: req.params.itemId },
-      data: { quantity: parseInt(quantity, 10) },
+      data: { quantity: qty },
       include: {
         product: {
           select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },

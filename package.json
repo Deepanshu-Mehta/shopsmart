@@ -1,0 +1,41 @@
+{
+  "name": "shopsmart",
+  "version": "1.0.0",
+  "description": "A full-stack luxury fashion storefront built with React + Express + PostgreSQL.",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky",
+    "test:server": "npm --prefix server test",
+    "test:client": "npm --prefix client test"
+  },
+  "lint-staged": {
+    "server/src/**/*.js": [
+      "server/node_modules/.bin/prettier --check",
+      "server/node_modules/.bin/eslint --config server/eslint.config.js --max-warnings 0"
+    ],
+    "server/tests/**/*.js": [
+      "server/node_modules/.bin/prettier --check",
+      "server/node_modules/.bin/eslint --config server/eslint.config.js --max-warnings 0"
+    ],
+    "client/src/**/*.{js,jsx}": [
+      "client/node_modules/.bin/prettier --check",
+      "client/node_modules/.bin/eslint --max-warnings 0"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Deepanshu-Mehta/shopsmart.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Deepanshu-Mehta/shopsmart/issues"
+  },
+  "homepage": "https://github.com/Deepanshu-Mehta/shopsmart#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1"
+  }
+}

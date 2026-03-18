@@ -1,0 +1,51 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      vite-tooling:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vitest"
+      testing:
+        patterns:
+          - "@testing-library/*"
+          - "jsdom"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "eslint-plugin-*"
+
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      prisma:
+        patterns:
+          - "@prisma/*"
+          - "prisma"
+      passport:
+        patterns:
+          - "passport*"
+
+  - package-ecosystem: "npm"
+    directory: "/e2e"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3

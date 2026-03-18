@@ -14,6 +14,13 @@ coverage/
 # Logs
 *.log
 npm-debug.log*
+logs/
+
+# Runtime / uploads
+uploads/
+
+# PM2
+.pm2/
 
 # OS / Editor
 .DS_Store
@@ -26,3 +33,11 @@ npm-debug.log*
 # Prisma generated client
 **/generated/prisma/
 **/.prisma/
+
+# Playwright
+/e2e/test-results/
+/e2e/playwright-report/
+/e2e/.auth/
+
+# Claude AI memory / project context
+.claude/
