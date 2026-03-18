@@ -1,5 +1,5 @@
 jest.mock('../src/prisma/client', () => ({
-  user: { findUnique: jest.fn() },
+  user: { findUnique: jest.fn(), count: jest.fn(), update: jest.fn() },
   revokedToken: { findUnique: jest.fn(), create: jest.fn(), deleteMany: jest.fn() },
 }));
 
@@ -42,15 +42,67 @@ describe('Auth routes', () => {
         { sub: 'user-cuid-1', email: 'test@vestir.com', role: 'USER' },
         'wrong-secret'
       );
-      const res = await request(app)
-        .get('/auth/me')
-        .set('Cookie', `token=${badToken}`);
+      const res = await request(app).get('/auth/me').set('Cookie', `token=${badToken}`);
       expect(res.statusCode).toBe(401);
     });
 
     it('returns 401 when user no longer exists in DB', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
       const res = await request(app).get('/auth/me').set('Cookie', makeAuthCookie());
+      expect(res.statusCode).toBe(401);
+    });
+  });
+
+  describe('POST /auth/promote-self', () => {
+    beforeEach(() => {
+      process.env.ADMIN_BOOTSTRAP_SECRET = 'test-bootstrap-secret';
+    });
+
+    it('promotes user to admin when secret is correct and no admins exist', async () => {
+      prisma.user.findUnique.mockResolvedValue(testUser);
+      prisma.revokedToken.findUnique.mockResolvedValue(null);
+      prisma.user.count.mockResolvedValue(0);
+      prisma.user.update.mockResolvedValue({ ...testUser, role: 'ADMIN' });
+
+      const res = await request(app)
+        .post('/auth/promote-self')
+        .set('Cookie', makeAuthCookie())
+        .send({ secret: 'test-bootstrap-secret' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ role: 'ADMIN' });
+    });
+
+    it('returns 403 when secret is wrong', async () => {
+      prisma.user.findUnique.mockResolvedValue(testUser);
+      prisma.revokedToken.findUnique.mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/auth/promote-self')
+        .set('Cookie', makeAuthCookie())
+        .send({ secret: 'wrong-secret' });
+
+      expect(res.statusCode).toBe(403);
+    });
+
+    it('returns 409 when an admin already exists', async () => {
+      prisma.user.findUnique.mockResolvedValue(testUser);
+      prisma.revokedToken.findUnique.mockResolvedValue(null);
+      prisma.user.count.mockResolvedValue(1);
+
+      const res = await request(app)
+        .post('/auth/promote-self')
+        .set('Cookie', makeAuthCookie())
+        .send({ secret: 'test-bootstrap-secret' });
+
+      expect(res.statusCode).toBe(409);
+    });
+
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app)
+        .post('/auth/promote-self')
+        .send({ secret: 'test-bootstrap-secret' });
+
       expect(res.statusCode).toBe(401);
     });
   });

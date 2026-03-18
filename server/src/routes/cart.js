@@ -63,37 +63,38 @@ router.post('/items', async (req, res, next) => {
     const product = await prisma.product.findUnique({ where: { id: parseInt(productId, 10) } });
     if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
 
-    const cart = await getOrCreateCart(req.user.id);
     const pid = parseInt(productId, 10);
     const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty < 1) {
+      return res.status(400).json({ error: 'quantity must be a positive integer' });
+    }
 
-    const existing = await prisma.cartItem.findFirst({
-      where: { cartId: cart.id, productId: pid, size, color },
+    const cart = await getOrCreateCart(req.user.id);
+
+    const productSelect = {
+      select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+    };
+
+    const [item, isNew] = await prisma.$transaction(async (tx) => {
+      const existing = await tx.cartItem.findFirst({
+        where: { cartId: cart.id, productId: pid, size, color },
+      });
+      if (existing) {
+        const updated = await tx.cartItem.update({
+          where: { id: existing.id },
+          data: { quantity: existing.quantity + qty },
+          include: { product: productSelect },
+        });
+        return [updated, false];
+      }
+      const created = await tx.cartItem.create({
+        data: { cartId: cart.id, productId: pid, quantity: qty, size, color },
+        include: { product: productSelect },
+      });
+      return [created, true];
     });
 
-    let item;
-    if (existing) {
-      item = await prisma.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + qty },
-        include: {
-          product: {
-            select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
-          },
-        },
-      });
-      res.json(item);
-    } else {
-      item = await prisma.cartItem.create({
-        data: { cartId: cart.id, productId: pid, quantity: qty, size, color },
-        include: {
-          product: {
-            select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
-          },
-        },
-      });
-      res.status(201).json(item);
-    }
+    return isNew ? res.status(201).json(item) : res.json(item);
   } catch (err) {
     next(err);
   }

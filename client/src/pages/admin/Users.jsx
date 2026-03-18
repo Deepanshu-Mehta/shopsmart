@@ -16,6 +16,10 @@ export default function Users() {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [updating, setUpdating] = useState(null);
+  const [bootstrapSecret, setBootstrapSecret] = useState('');
+  const [bootstrapMsg, setBootstrapMsg] = useState('');
+  const [bootstrapError, setBootstrapError] = useState('');
+  const [promoting, setPromoting] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/api/admin/users`, { credentials: 'include' })
@@ -69,6 +73,32 @@ export default function Users() {
     }
   };
 
+  const promoteSelf = async (e) => {
+    e.preventDefault();
+    setPromoting(true);
+    setBootstrapError('');
+    setBootstrapMsg('');
+    try {
+      const res = await fetch(`${API}/auth/promote-self`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: bootstrapSecret }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBootstrapError(data.error || 'Promotion failed');
+      } else {
+        setBootstrapMsg('Promoted to admin! Please refresh the page.');
+      }
+    } catch {
+      setBootstrapError('Network error — please try again');
+    } finally {
+      setPromoting(false);
+      setBootstrapSecret('');
+    }
+  };
+
   return (
     <>
       <div className="admin-page-header">
@@ -78,15 +108,37 @@ export default function Users() {
       {error && <div className="admin-error">{error}</div>}
       {actionError && <div className="admin-error">{actionError}</div>}
 
-      <div
-        className="admin-success"
-        style={{ marginBottom: 24, background: 'rgba(201,169,110,0.07)', borderColor: 'rgba(201,169,110,0.3)', color: '#7a5c1a' }}
-      >
-        To promote yourself to admin: run{' '}
-        <code style={{ fontFamily: 'monospace', fontSize: 12 }}>
-          UPDATE &quot;User&quot; SET role = &apos;ADMIN&apos; WHERE email = &apos;your@email.com&apos;;
-        </code>{' '}
-        directly in the database. Once logged in as admin, use this page to manage all other users.
+      <div className="admin-card" style={{ marginBottom: 24, padding: '20px 24px' }}>
+        <p style={{ fontSize: 13, color: 'var(--a-text-muted)', marginBottom: 12 }}>
+          First-time bootstrap: promote yourself to admin using the{' '}
+          <code>ADMIN_BOOTSTRAP_SECRET</code> env var. Only works when no admins exist yet.
+        </p>
+        <form
+          onSubmit={promoteSelf}
+          style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}
+        >
+          <input
+            className="admin-input"
+            type="password"
+            placeholder="Bootstrap secret"
+            value={bootstrapSecret}
+            onChange={(e) => setBootstrapSecret(e.target.value)}
+            style={{ maxWidth: 260 }}
+          />
+          <button
+            type="submit"
+            className="admin-btn admin-btn-primary"
+            disabled={promoting || !bootstrapSecret}
+          >
+            {promoting ? '…' : 'Promote Me to Admin'}
+          </button>
+        </form>
+        {bootstrapMsg && (
+          <p style={{ color: '#2e7d32', fontSize: 13, marginTop: 8 }}>{bootstrapMsg}</p>
+        )}
+        {bootstrapError && (
+          <p style={{ color: '#c0392b', fontSize: 13, marginTop: 8 }}>{bootstrapError}</p>
+        )}
       </div>
 
       <div className="admin-card">
@@ -136,8 +188,8 @@ export default function Users() {
                       {updating === u.id
                         ? '…'
                         : u.role === 'ADMIN'
-                        ? 'Demote to User'
-                        : 'Make Admin'}
+                          ? 'Demote to User'
+                          : 'Make Admin'}
                     </button>
                   </td>
                 </tr>

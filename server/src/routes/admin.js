@@ -101,6 +101,11 @@ router.post('/products/:id/image', upload.single('image'), async (req, res, next
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid product id' });
     if (!req.file) return res.status(400).json({ error: 'No image file provided' });
 
+    const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!ALLOWED_MIME.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: 'Only JPEG, PNG, and WebP images are allowed' });
+    }
+
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(

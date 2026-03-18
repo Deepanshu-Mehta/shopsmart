@@ -1,0 +1,12 @@
+#!/bin/sh
+
+echo "▶ lint-staged"
+npx lint-staged || exit 1
+
+echo "▶ server tests"
+npm --prefix server test -- --no-coverage || exit 1
+
+echo "▶ client tests"
+npm --prefix client test || exit 1
+
+echo "✓ all checks passed"

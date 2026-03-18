@@ -1,48 +1,58 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function CartDrawer({ open, onClose, user, cartItems = [], onCartItemsChange }) {
+  const [syncError, setSyncError] = useState('');
+
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [open]);
 
+  const refetchCart = () => {
+    fetch(`${API_URL}/api/cart`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) onCartItemsChange(data.items);
+      })
+      .catch(() => {});
+  };
+
   const removeItem = async (itemId) => {
+    setSyncError('');
     // Optimistic remove
     onCartItemsChange((prev) => prev.filter((i) => i.id !== itemId));
     try {
-      await fetch(`${API_URL}/api/cart/items/${itemId}`, {
+      const res = await fetch(`${API_URL}/api/cart/items/${itemId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
+      if (!res.ok) throw new Error('remove failed');
     } catch {
-      // Server sync failed — refetch to restore correct state
-      fetch(`${API_URL}/api/cart`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => { if (data) onCartItemsChange(data.items); })
-        .catch(() => {});
+      setSyncError('Failed to remove item — please try again');
+      refetchCart();
     }
   };
 
   const updateQty = async (itemId, quantity) => {
     if (quantity < 1) return removeItem(itemId);
+    setSyncError('');
     // Optimistic update
-    onCartItemsChange((prev) =>
-      prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
-    );
+    onCartItemsChange((prev) => prev.map((i) => (i.id === itemId ? { ...i, quantity } : i)));
     try {
-      await fetch(`${API_URL}/api/cart/items/${itemId}`, {
+      const res = await fetch(`${API_URL}/api/cart/items/${itemId}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity }),
       });
+      if (!res.ok) throw new Error('update failed');
     } catch {
-      fetch(`${API_URL}/api/cart`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => { if (data) onCartItemsChange(data.items); })
-        .catch(() => {});
+      setSyncError('Failed to update quantity — please try again');
+      refetchCart();
     }
   };
 
@@ -128,6 +138,18 @@ export default function CartDrawer({ open, onClose, user, cartItems = [], onCart
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
+          {syncError && (
+            <p
+              style={{
+                color: '#c0392b',
+                fontSize: 12,
+                marginBottom: 16,
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              {syncError}
+            </p>
+          )}
           {!user ? (
             <div style={{ textAlign: 'center', paddingTop: 64 }}>
               <p

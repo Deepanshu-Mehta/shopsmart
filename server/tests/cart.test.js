@@ -1,16 +1,20 @@
-jest.mock('../src/prisma/client', () => ({
-  user: { findUnique: jest.fn() },
-  product: { findUnique: jest.fn() },
-  cart: { findUnique: jest.fn(), create: jest.fn() },
-  cartItem: {
-    create: jest.fn(),
-    findFirst: jest.fn(),
-    findUnique: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-  revokedToken: { findUnique: jest.fn() },
-}));
+jest.mock('../src/prisma/client', () => {
+  const mock = {
+    user: { findUnique: jest.fn() },
+    product: { findUnique: jest.fn() },
+    cart: { findUnique: jest.fn(), create: jest.fn() },
+    cartItem: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    revokedToken: { findUnique: jest.fn() },
+  };
+  mock.$transaction = jest.fn((callback) => callback(mock));
+  return mock;
+});
 
 const request = require('supertest');
 const app = require('../src/app');
@@ -119,12 +123,23 @@ describe('Cart routes', () => {
     });
 
     it('returns 200 and increments quantity when same product+size+color already in cart', async () => {
-      const existingItem = { id: 'item-1', cartId: 'cart-1', productId: 1, quantity: 1, size: 'M', color: 'Sand' };
+      const existingItem = {
+        id: 'item-1',
+        cartId: 'cart-1',
+        productId: 1,
+        quantity: 1,
+        size: 'M',
+        color: 'Sand',
+      };
       prisma.user.findUnique.mockResolvedValue(testUser);
       prisma.product.findUnique.mockResolvedValue(mockProduct);
       prisma.cart.findUnique.mockResolvedValue(emptyCart);
       prisma.cartItem.findFirst.mockResolvedValue(existingItem);
-      prisma.cartItem.update.mockResolvedValue({ ...existingItem, quantity: 2, product: mockProduct });
+      prisma.cartItem.update.mockResolvedValue({
+        ...existingItem,
+        quantity: 2,
+        product: mockProduct,
+      });
 
       const res = await request(app)
         .post('/api/cart/items')
@@ -146,6 +161,17 @@ describe('Cart routes', () => {
 
       expect(res.statusCode).toBe(400);
       expect(res.body).toMatchObject({ error: expect.stringContaining('required') });
+    });
+
+    it('returns 400 when quantity is 0', async () => {
+      prisma.user.findUnique.mockResolvedValue(testUser);
+
+      const res = await request(app)
+        .post('/api/cart/items')
+        .set('Cookie', makeAuthCookie())
+        .send({ productId: 1, size: 'M', color: 'Sand', quantity: 0 });
+
+      expect(res.statusCode).toBe(400);
     });
 
     it('returns 404 when product does not exist', async () => {
@@ -174,7 +200,11 @@ describe('Cart routes', () => {
     it('returns 200 with updated item when quantity >= 1', async () => {
       prisma.user.findUnique.mockResolvedValue(testUser);
       prisma.cartItem.findUnique.mockResolvedValue(mockCartItem);
-      prisma.cartItem.update.mockResolvedValue({ ...mockCartItem, quantity: 3, product: mockProduct });
+      prisma.cartItem.update.mockResolvedValue({
+        ...mockCartItem,
+        quantity: 3,
+        product: mockProduct,
+      });
 
       const res = await request(app)
         .patch('/api/cart/items/item-1')

@@ -64,12 +64,33 @@ router.post('/logout', async (req, res) => {
     }
   }
 
-  res.clearCookie('token', {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-  });
+  // eslint-disable-next-line no-unused-vars
+  const { maxAge: _maxAge, ...clearCookieOptions } = COOKIE_OPTIONS;
+  res.clearCookie('token', clearCookieOptions);
   res.json({ message: 'Logged out' });
+});
+
+// POST /auth/promote-self — bootstrap first admin without raw SQL
+// Requires ADMIN_BOOTSTRAP_SECRET env var and zero existing admins
+router.post('/promote-self', requireAuth, async (req, res, next) => {
+  try {
+    const { secret } = req.body;
+    if (!secret || secret !== process.env.ADMIN_BOOTSTRAP_SECRET) {
+      return res.status(403).json({ error: 'Invalid bootstrap secret' });
+    }
+
+    const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+    if (adminCount > 0) {
+      return res
+        .status(409)
+        .json({ error: 'An admin already exists. Use the admin panel to manage roles.' });
+    }
+
+    const user = await prisma.user.update({ where: { id: req.user.id }, data: { role: 'ADMIN' } });
+    res.json({ message: 'Promoted to admin', role: user.role });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

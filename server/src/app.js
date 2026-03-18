@@ -21,7 +21,9 @@ const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 // In dev, also allow the alternate Vite port in case of port collision
 const allowedOrigins = new Set([
   frontendUrl,
-  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:5174'] : []),
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:5173', 'http://localhost:5174']
+    : []),
 ]);
 
 app.use(
@@ -37,6 +39,14 @@ app.use(
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Stricter limit for Google OAuth to prevent abuse
+const googleLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -70,6 +80,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.use('/auth/google', googleLimiter);
 app.use('/auth', authLimiter, authRoutes);
 app.use('/api/products', apiLimiter, productRoutes);
 app.use('/api/cart', apiLimiter, cartRoutes);

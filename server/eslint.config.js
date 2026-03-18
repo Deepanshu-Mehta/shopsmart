@@ -21,7 +21,7 @@ export default [
     },
   },
   {
-    files: ['tests/**/*.js'],
+    files: ['tests/**/*.js', '**/tests/**/*.js'],
     languageOptions: {
       globals: {
         describe: 'readonly',

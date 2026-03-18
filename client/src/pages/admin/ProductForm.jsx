@@ -111,10 +111,14 @@ export default function ProductForm() {
       hoverImgUrl: form.hoverImgUrl || null,
     };
 
+    if (isNaN(payload.price)) {
+      setError('Price must be a valid number');
+      setSaving(false);
+      return;
+    }
+
     try {
-      const url = isEdit
-        ? `${API}/api/admin/products/${id}`
-        : `${API}/api/admin/products`;
+      const url = isEdit ? `${API}/api/admin/products/${id}` : `${API}/api/admin/products`;
       const method = isEdit ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -135,11 +139,17 @@ export default function ProductForm() {
       if (imageFile && data.id) {
         const fd = new FormData();
         fd.append('image', imageFile);
-        await fetch(`${API}/api/admin/products/${data.id}/image`, {
+        const imgRes = await fetch(`${API}/api/admin/products/${data.id}/image`, {
           method: 'POST',
           credentials: 'include',
           body: fd,
         });
+        if (!imgRes.ok) {
+          const imgData = await imgRes.json().catch(() => ({}));
+          setError(imgData.error || 'Product saved but image upload failed');
+          setSaving(false);
+          return;
+        }
       }
 
       navigate('/admin/products');
@@ -194,7 +204,9 @@ export default function ProductForm() {
               <label className="admin-label">Category *</label>
               <select className="admin-select" value={form.category} onChange={set('category')}>
                 {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -299,7 +311,10 @@ export default function ProductForm() {
           </div>
 
           {/* Active toggle */}
-          <div className="admin-form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <div
+            className="admin-form-group"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
+          >
             <input
               type="checkbox"
               id="isActive"
