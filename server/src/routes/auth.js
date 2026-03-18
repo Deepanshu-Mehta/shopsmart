@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const prisma = require('../prisma/client');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -44,8 +45,25 @@ router.get('/me', requireAuth, (req, res) => {
   res.json({ id, email, name, role });
 });
 
-// POST /auth/logout
-router.post('/logout', (req, res) => {
+// POST /auth/logout — revoke token then clear cookie
+router.post('/logout', async (req, res) => {
+  const token = req.cookies?.token;
+
+  if (token) {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const jti = `${payload.sub}:${payload.iat}`;
+
+      // Opportunistically clean up expired entries, then record this revocation
+      await prisma.revokedToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+      await prisma.revokedToken.create({
+        data: { jti, expiresAt: new Date(payload.exp * 1000) },
+      });
+    } catch {
+      // Token already expired or invalid — nothing to revoke
+    }
+  }
+
   res.clearCookie('token', {
     httpOnly: true,
     sameSite: 'lax',

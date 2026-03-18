@@ -3,11 +3,14 @@ const prisma = require('../prisma/client');
 
 const router = express.Router();
 
-// GET /api/products — list (optionally filter by category)
+// GET /api/products — list with optional category filter and pagination
 router.get('/', async (req, res, next) => {
   try {
     const where = { isActive: true };
     if (req.query.category) where.category = req.query.category;
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
 
     const products = await prisma.product.findMany({
       where,
@@ -26,6 +29,8 @@ router.get('/', async (req, res, next) => {
         filter: true,
       },
       orderBy: { id: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     res.json(products);

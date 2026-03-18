@@ -64,23 +64,36 @@ router.post('/items', async (req, res, next) => {
     if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
 
     const cart = await getOrCreateCart(req.user.id);
+    const pid = parseInt(productId, 10);
+    const qty = parseInt(quantity, 10);
 
-    const item = await prisma.cartItem.create({
-      data: {
-        cartId: cart.id,
-        productId: parseInt(productId, 10),
-        quantity: parseInt(quantity, 10),
-        size,
-        color,
-      },
-      include: {
-        product: {
-          select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
-        },
-      },
+    const existing = await prisma.cartItem.findFirst({
+      where: { cartId: cart.id, productId: pid, size, color },
     });
 
-    res.status(201).json(item);
+    let item;
+    if (existing) {
+      item = await prisma.cartItem.update({
+        where: { id: existing.id },
+        data: { quantity: existing.quantity + qty },
+        include: {
+          product: {
+            select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+          },
+        },
+      });
+      res.json(item);
+    } else {
+      item = await prisma.cartItem.create({
+        data: { cartId: cart.id, productId: pid, quantity: qty, size, color },
+        include: {
+          product: {
+            select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+          },
+        },
+      });
+      res.status(201).json(item);
+    }
   } catch (err) {
     next(err);
   }

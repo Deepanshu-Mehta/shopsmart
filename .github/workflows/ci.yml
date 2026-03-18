@@ -10,83 +10,165 @@ jobs:
   client:
     name: Build Client
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         working-directory: ./client
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Say Hello
-        run: echo "👋 Hello GitHub Actions!"
-      
-      - name: Show Context Info
-        run: |
-          echo "🔹 Repository: ${{ github.repository }}"
-          echo "🔹 Branch: ${{ github.ref_name }}"
-          echo "🔹 Commit: ${{ github.sha }}"
-          echo "🔹 Actor: ${{ github.actor }}"
-          echo "🔹 Event: ${{ github.event_name }}"
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: ./client/package-lock.json
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run tests
         run: npm run test
-      
+
+      - name: Run ESLint
+        run: npm run lint
+
       - name: Check formatting
         run: npm run format -- --check
-      
+
       - name: Build client
         run: npm run build
 
   server:
     name: Build Server
     runs-on: ubuntu-latest
-    
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: vestir_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vestir_test
+      JWT_SECRET: ci-jwt-secret-for-server-tests-min32!!
+      NODE_ENV: test
+      FRONTEND_URL: http://localhost:5173
+      GOOGLE_CLIENT_ID: test-client-id
+      GOOGLE_CLIENT_SECRET: test-client-secret
+      GOOGLE_CALLBACK_URL: http://localhost:5001/auth/google/callback
+
     defaults:
       run:
         working-directory: ./server
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Say Hello
-        run: echo "👋 Hello GitHub Actions!"
-      
-      - name: Show Context Info
-        run: |
-          echo "🔹 Repository: ${{ github.repository }}"
-          echo "🔹 Branch: ${{ github.ref_name }}"
-          echo "🔹 Commit: ${{ github.sha }}"
-          echo "🔹 Actor: ${{ github.actor }}"
-          echo "🔹 Event: ${{ github.event_name }}"
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: ./server/package-lock.json
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+
       - name: Run tests
         run: npm run test
-      
+
+      - name: Run ESLint
+        run: npm run lint
+
       - name: Check formatting
         run: npm run format -- --check
-      
-      - name: Verify server setup
-        run: node --version && npm --version
+
+  e2e:
+    name: E2E Tests
+    needs: [client, server]
+    runs-on: ubuntu-latest
+
+    # Real Postgres for the real backend (Option 2 CI)
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: vestir_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vestir_test
+      JWT_SECRET: e2e-ci-jwt-secret-minimum-32-chars!!
+      FRONTEND_URL: http://localhost:5173
+      GOOGLE_CLIENT_ID: test-client-id
+      GOOGLE_CLIENT_SECRET: test-client-secret
+      GOOGLE_CALLBACK_URL: http://localhost:5001/auth/google/callback
+      NODE_ENV: development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: ./server
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        working-directory: ./server
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+        working-directory: ./server
+
+      - name: Seed database
+        run: npm run db:seed
+        working-directory: ./server
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: ./client
+
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: ./e2e
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: ./e2e
+
+      - name: Run E2E tests
+        run: npx playwright test
+        working-directory: ./e2e

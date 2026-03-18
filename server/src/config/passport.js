@@ -9,7 +9,7 @@ const cookieExtractor = (req) => {
   return null;
 };
 
-// JWT Strategy
+// JWT Strategy — also checks revocation denylist
 passport.use(
   new JwtStrategy(
     {
@@ -20,6 +20,12 @@ passport.use(
       try {
         const user = await prisma.user.findUnique({ where: { id: payload.sub } });
         if (!user) return done(null, false);
+
+        // Check if token was explicitly revoked (e.g. after logout)
+        const jti = `${payload.sub}:${payload.iat}`;
+        const revoked = await prisma.revokedToken.findUnique({ where: { jti } });
+        if (revoked) return done(null, false);
+
         return done(null, user);
       } catch (err) {
         return done(err, false);

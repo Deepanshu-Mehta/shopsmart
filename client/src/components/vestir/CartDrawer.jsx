@@ -1,59 +1,55 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-export default function CartDrawer({ open, onClose, user, onCartCountChange }) {
-  const [cart, setCart] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchCart = useCallback(() => {
-    if (!user) return;
-    setLoading(true);
-    fetch(`${API_URL}/api/cart`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        setCart(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [user]);
-
-  useEffect(() => {
-    if (open) fetchCart();
-  }, [open, fetchCart]);
-
+export default function CartDrawer({ open, onClose, user, cartItems = [], onCartItemsChange }) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [open]);
 
   const removeItem = async (itemId) => {
-    await fetch(`${API_URL}/api/cart/items/${itemId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    fetchCart();
-    onCartCountChange?.();
+    // Optimistic remove
+    onCartItemsChange((prev) => prev.filter((i) => i.id !== itemId));
+    try {
+      await fetch(`${API_URL}/api/cart/items/${itemId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+    } catch {
+      // Server sync failed — refetch to restore correct state
+      fetch(`${API_URL}/api/cart`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => { if (data) onCartItemsChange(data.items); })
+        .catch(() => {});
+    }
   };
 
   const updateQty = async (itemId, quantity) => {
     if (quantity < 1) return removeItem(itemId);
-    await fetch(`${API_URL}/api/cart/items/${itemId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantity }),
-    });
-    fetchCart();
+    // Optimistic update
+    onCartItemsChange((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
+    );
+    try {
+      await fetch(`${API_URL}/api/cart/items/${itemId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity }),
+      });
+    } catch {
+      fetch(`${API_URL}/api/cart`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => { if (data) onCartItemsChange(data.items); })
+        .catch(() => {});
+    }
   };
 
-  const items = cart?.items || [];
-  const totalLabel = items.length
+  const totalLabel = cartItems.length
     ? '₹' +
       (
-        items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0) / 100
+        cartItems.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0) / 100
       ).toLocaleString('en-IN')
     : null;
 
@@ -111,7 +107,7 @@ export default function CartDrawer({ open, onClose, user, onCartCountChange }) {
               color: 'var(--color-muted)',
             }}
           >
-            Your Bag {items.length > 0 && `(${items.length})`}
+            Your Bag {cartItems.length > 0 && `(${cartItems.length})`}
           </span>
           <button
             onClick={onClose}
@@ -161,21 +157,7 @@ export default function CartDrawer({ open, onClose, user, onCartCountChange }) {
                 Sign in with Google
               </a>
             </div>
-          ) : loading ? (
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 12,
-                letterSpacing: '0.2em',
-                color: 'var(--color-muted)',
-                textTransform: 'uppercase',
-                textAlign: 'center',
-                paddingTop: 48,
-              }}
-            >
-              Loading…
-            </p>
-          ) : items.length === 0 ? (
+          ) : cartItems.length === 0 ? (
             <div style={{ textAlign: 'center', paddingTop: 64 }}>
               <p
                 style={{
@@ -200,7 +182,7 @@ export default function CartDrawer({ open, onClose, user, onCartCountChange }) {
             </div>
           ) : (
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 24 }}>
-              {items.map((item) => (
+              {cartItems.map((item) => (
                 <li
                   key={item.id}
                   style={{
@@ -340,7 +322,7 @@ export default function CartDrawer({ open, onClose, user, onCartCountChange }) {
         </div>
 
         {/* Footer — total + checkout */}
-        {items.length > 0 && (
+        {cartItems.length > 0 && (
           <div style={{ padding: '24px 32px', borderTop: '1px solid rgba(26,25,22,0.12)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
               <span

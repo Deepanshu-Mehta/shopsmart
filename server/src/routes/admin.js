@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const { z } = require('zod');
 const prisma = require('../prisma/client');
 const cloudinary = require('../config/cloudinary');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
@@ -10,45 +11,49 @@ const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
 
+// Zod schema for product create/update validation
+const productSchema = z.object({
+  name: z.string().min(1).max(200),
+  slug: z.string().min(1).max(200),
+  category: z.string().min(1),
+  categoryLabel: z.string().min(1),
+  price: z.number().int().positive(),
+  priceLabel: z.string().min(1),
+  imgUrl: z.string().url().optional().nullable(),
+  hoverImgUrl: z.string().url().optional().nullable(),
+  imgClass: z.string().optional().default(''),
+  hoverClass: z.string().optional().default(''),
+  filter: z.string().min(1),
+  isActive: z.boolean().optional().default(true),
+  details: z.string().default(''),
+  materials: z.string().default(''),
+  shipping: z.string().default(''),
+});
+
+const productUpdateSchema = productSchema.partial();
+
+// GET /api/admin/products — list all products (including inactive)
+router.get('/products', async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({ orderBy: { id: 'asc' } });
+    res.json(products);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/admin/products — create
 router.post('/products', async (req, res, next) => {
   try {
-    const {
-      name,
-      slug,
-      category,
-      categoryLabel,
-      price,
-      priceLabel,
-      imgUrl,
-      hoverImgUrl,
-      imgClass,
-      hoverClass,
-      filter,
-      isActive,
-      details,
-      materials,
-      shipping,
-    } = req.body;
-    const product = await prisma.product.create({
-      data: {
-        name,
-        slug,
-        category,
-        categoryLabel,
-        price: parseInt(price, 10),
-        priceLabel,
-        imgUrl,
-        hoverImgUrl,
-        imgClass,
-        hoverClass,
-        filter,
-        isActive: isActive !== undefined ? Boolean(isActive) : true,
-        details,
-        materials,
-        shipping,
-      },
+    const parsed = productSchema.safeParse({
+      ...req.body,
+      price: req.body.price !== undefined ? Number(req.body.price) : undefined,
     });
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
+    }
+
+    const product = await prisma.product.create({ data: parsed.data });
     res.status(201).json(product);
   } catch (err) {
     next(err);
@@ -61,55 +66,28 @@ router.put('/products/:id', async (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid product id' });
 
-    const {
-      name,
-      slug,
-      category,
-      categoryLabel,
-      price,
-      priceLabel,
-      imgUrl,
-      hoverImgUrl,
-      imgClass,
-      hoverClass,
-      filter,
-      isActive,
-      details,
-      materials,
-      shipping,
-    } = req.body;
+    const parsed = productUpdateSchema.safeParse({
+      ...req.body,
+      price: req.body.price !== undefined ? Number(req.body.price) : undefined,
+    });
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
+    }
 
-    const data = {};
-    if (name !== undefined) data.name = name;
-    if (slug !== undefined) data.slug = slug;
-    if (category !== undefined) data.category = category;
-    if (categoryLabel !== undefined) data.categoryLabel = categoryLabel;
-    if (price !== undefined) data.price = parseInt(price, 10);
-    if (priceLabel !== undefined) data.priceLabel = priceLabel;
-    if (imgUrl !== undefined) data.imgUrl = imgUrl;
-    if (hoverImgUrl !== undefined) data.hoverImgUrl = hoverImgUrl;
-    if (imgClass !== undefined) data.imgClass = imgClass;
-    if (hoverClass !== undefined) data.hoverClass = hoverClass;
-    if (filter !== undefined) data.filter = filter;
-    if (isActive !== undefined) data.isActive = Boolean(isActive);
-    if (details !== undefined) data.details = details;
-    if (materials !== undefined) data.materials = materials;
-    if (shipping !== undefined) data.shipping = shipping;
-
-    const product = await prisma.product.update({ where: { id }, data });
+    const product = await prisma.product.update({ where: { id }, data: parsed.data });
     res.json(product);
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/admin/products/:id
+// DELETE /api/admin/products/:id — soft delete (sets isActive: false)
 router.delete('/products/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid product id' });
 
-    await prisma.product.delete({ where: { id } });
+    await prisma.product.update({ where: { id }, data: { isActive: false } });
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -158,6 +136,40 @@ router.get('/newsletter', async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
     });
     res.json(subscribers);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/users — list all users
+router.get('/users', async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, email: true, name: true, role: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/admin/users/:id/role — promote or demote user
+router.patch('/users/:id/role', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!['USER', 'ADMIN'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be USER or ADMIN' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    res.json(user);
   } catch (err) {
     next(err);
   }

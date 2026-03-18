@@ -19,52 +19,88 @@ const Cursor = lazy(() => import('./components/vestir/Cursor'));
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function App() {
-  const [cartCount, setCartCount] = useState(0);
+  const [cartItems, setCartItems] = useState([]); // source of truth for cart
   const [cartOpen, setCartOpen] = useState(false);
   const [activeProduct, setActiveProduct] = useState(null);
   const [user, setUser] = useState(null);
+
+  const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
 
   // Fetch current user on mount
   useEffect(() => {
     fetch(`${API_URL}/auth/me`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) setUser(data);
-      })
+      .then((data) => { if (data) setUser(data); })
       .catch(() => {});
   }, []);
+
+  // Load cart whenever user logs in
+  useEffect(() => {
+    if (!user) { setCartItems([]); return; }
+    fetch(`${API_URL}/api/cart`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setCartItems(data.items); })
+      .catch(() => {});
+  }, [user]);
 
   const logout = async () => {
     await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
     setUser(null);
-    setCartCount(0);
+    setCartItems([]);
   };
 
   const addToCart = async (product, { size = 'M', color = 'Default', quantity = 1 } = {}) => {
-    if (user && product?.id) {
-      try {
-        await fetch(`${API_URL}/api/cart/items`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: product.id, quantity, size, color }),
-        });
-      } catch {
-        // Optimistic count update regardless
-      }
-    }
-    setCartCount((c) => c + 1);
-  };
+    if (!product?.id) return;
 
-  // Called by CartDrawer after remove/update — re-sync count
-  const refreshCartCount = () => {
-    if (!user) return;
-    fetch(`${API_URL}/api/cart`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) setCartCount(data.items.reduce((s, i) => s + i.quantity, 0));
-      })
-      .catch(() => {});
+    if (!user) {
+      // Not logged in — bump a visual-only count with a fake item
+      setCartItems((prev) => {
+        const existing = prev.find(
+          (i) => i.product?.id === product.id && i.size === size && i.color === color
+        );
+        if (existing) return prev.map((i) => i === existing ? { ...i, quantity: i.quantity + quantity } : i);
+        return [...prev, { id: `guest-${Date.now()}`, product, quantity, size, color }];
+      });
+      return;
+    }
+
+    // Optimistic update — show immediately, replace with real server item after
+    const tempId = `temp-${Date.now()}`;
+    setCartItems((prev) => {
+      const existing = prev.find(
+        (i) => i.product?.id === product.id && i.size === size && i.color === color
+      );
+      if (existing) {
+        return prev.map((i) => i === existing ? { ...i, quantity: i.quantity + quantity } : i);
+      }
+      return [...prev, { id: tempId, product, quantity, size, color }];
+    });
+
+    try {
+      const res = await fetch(`${API_URL}/api/cart/items`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id, quantity, size, color }),
+      });
+      if (res.ok) {
+        const item = await res.json();
+        // Replace temp placeholder with real server item (gives us real ID)
+        setCartItems((prev) => prev.map((i) => i.id === tempId ? item : i));
+      }
+    } catch {
+      // Revert optimistic update on failure
+      setCartItems((prev) => {
+        const withoutTemp = prev.filter((i) => i.id !== tempId);
+        const existing = withoutTemp.find(
+          (i) => i.product?.id === product.id && i.size === size && i.color === color
+        );
+        if (existing) {
+          return withoutTemp.map((i) => i === existing ? { ...i, quantity: i.quantity - quantity } : i);
+        }
+        return withoutTemp;
+      });
+    }
   };
 
   return (
@@ -82,7 +118,7 @@ export default function App() {
         <Hero />
         <Ticker />
         <Categories />
-        <ProductGrid onOpenProduct={setActiveProduct} onQuickAdd={() => addToCart(null)} />
+        <ProductGrid onOpenProduct={setActiveProduct} onQuickAdd={(product) => addToCart(product)} />
         <BrandStory />
         <Editorial onOpenProduct={setActiveProduct} />
         <Press />
@@ -98,9 +134,10 @@ export default function App() {
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         user={user}
-        onCartCountChange={refreshCartCount}
+        cartItems={cartItems}
+        onCartItemsChange={setCartItems}
       />
-      <MobileStickyBar onAdd={() => addToCart(null)} />
+      <MobileStickyBar onAdd={() => addToCart(activeProduct)} />
     </>
   );
 }

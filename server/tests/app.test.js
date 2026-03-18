@@ -1,3 +1,7 @@
+jest.mock('../src/prisma/client', () => ({
+  $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
+}));
+
 const request = require('supertest');
 const app = require('../src/app');
 

@@ -204,7 +204,7 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
                   aria-label={`Quick add ${p.name} to bag`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onQuickAdd();
+                    onQuickAdd(p);
                   }}
                   data-hover
                   style={{
