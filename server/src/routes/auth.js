@@ -13,11 +13,9 @@ const COOKIE_OPTIONS = {
 };
 
 function signToken(user) {
-  return jwt.sign(
-    { sub: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+  return jwt.sign({ sub: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  });
 }
 
 // GET /auth/google — initiate OAuth
@@ -29,7 +27,10 @@ router.get(
 // GET /auth/google/callback
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}?auth=error` }),
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: `${process.env.FRONTEND_URL}?auth=error`,
+  }),
   (req, res) => {
     const token = signToken(req.user);
     res.cookie('token', token, COOKIE_OPTIONS);
@@ -45,7 +46,11 @@ router.get('/me', requireAuth, (req, res) => {
 
 // POST /auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('token', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
   res.json({ message: 'Logged out' });
 });
 

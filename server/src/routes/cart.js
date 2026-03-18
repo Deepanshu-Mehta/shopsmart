@@ -11,13 +11,29 @@ router.use(requireAuth);
 async function getOrCreateCart(userId) {
   let cart = await prisma.cart.findUnique({
     where: { userId },
-    include: { items: { include: { product: { select: { id: true, name: true, price: true, priceLabel: true, imgClass: true } } } } },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+          },
+        },
+      },
+    },
   });
 
   if (!cart) {
     cart = await prisma.cart.create({
       data: { userId },
-      include: { items: { include: { product: { select: { id: true, name: true, price: true, priceLabel: true, imgClass: true } } } } },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -57,7 +73,11 @@ router.post('/items', async (req, res, next) => {
         size,
         color,
       },
-      include: { product: { select: { id: true, name: true, price: true, priceLabel: true, imgClass: true } } },
+      include: {
+        product: {
+          select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+        },
+      },
     });
 
     res.status(201).json(item);
@@ -83,7 +103,11 @@ router.patch('/items/:itemId', async (req, res, next) => {
     const updated = await prisma.cartItem.update({
       where: { id: req.params.itemId },
       data: { quantity: parseInt(quantity, 10) },
-      include: { product: { select: { id: true, name: true, price: true, priceLabel: true, imgClass: true } } },
+      include: {
+        product: {
+          select: { id: true, name: true, price: true, priceLabel: true, imgClass: true },
+        },
+      },
     });
 
     res.json(updated);

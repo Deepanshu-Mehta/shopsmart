@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export function useReveal({
-  threshold = 0.1,
-} = {}) {
+export function useReveal({ threshold = 0.1 } = {}) {
   const ref = useRef(null);
 
   useEffect(() => {

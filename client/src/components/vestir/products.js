@@ -15,14 +15,26 @@ export function useProducts(category = null) {
       : `${API_URL}/api/products`;
 
     fetch(url)
-      .then(r => {
+      .then((r) => {
         if (!r.ok) throw new Error('Failed to fetch products');
         return r.json();
       })
-      .then(data => { if (!cancelled) { setProducts(data); setLoading(false); } })
-      .catch(err => { if (!cancelled) { setError(err.message); setLoading(false); } });
+      .then((data) => {
+        if (!cancelled) {
+          setProducts(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message);
+          setLoading(false);
+        }
+      });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [category]);
 
   return { products, loading, error };

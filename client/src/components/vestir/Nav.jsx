@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
-  const [scrolled, setScrolled]   = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [pulsing, setPulsing]     = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pulsing, setPulsing] = useState(false);
   const prevCount = useRef(cartCount);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
   }, [cartCount]);
 
   const toggleMenu = () => {
-    setMenuOpen(v => !v);
+    setMenuOpen((v) => !v);
     document.body.style.overflow = menuOpen ? '' : 'hidden';
   };
   const closeMenu = () => {
@@ -42,13 +42,20 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
         <button
           onClick={closeMenu}
           style={{
-            position: 'absolute', top: 28, right: 48,
-            fontSize: 24, fontWeight: 300, color: 'var(--color-ink)',
-            background: 'none', border: 'none',
+            position: 'absolute',
+            top: 28,
+            right: 48,
+            fontSize: 24,
+            fontWeight: 300,
+            color: 'var(--color-ink)',
+            background: 'none',
+            border: 'none',
           }}
           data-hover
           aria-label="Close menu"
-        >×</button>
+        >
+          ×
+        </button>
         {navLinks.map((link, i) => (
           <a
             key={link}
@@ -62,14 +69,19 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
               letterSpacing: '0.1em',
               color: 'var(--color-ink)',
             }}
-          >{link}</a>
+          >
+            {link}
+          </a>
         ))}
       </div>
 
       <header>
         <nav
           style={{
-            position: 'fixed', top: 0, left: 0, right: 0,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
             zIndex: 1000,
             padding: scrolled ? '16px 48px' : '24px 48px',
             display: 'flex',
@@ -97,7 +109,9 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
               color: 'var(--color-ink)',
               zIndex: 1,
             }}
-          >VESTIR</a>
+          >
+            VESTIR
+          </a>
 
           {/* Center links */}
           <ul
@@ -124,7 +138,9 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
                     textTransform: 'uppercase',
                     color: 'var(--color-ink)',
                   }}
-                >{link}</a>
+                >
+                  {link}
+                </a>
               </li>
             ))}
           </ul>
@@ -147,7 +163,9 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
                   border: 'none',
                   cursor: 'none',
                 }}
-              >{user.name?.split(' ')[0] ?? user.email} · Out</button>
+              >
+                {user.name?.split(' ')[0] ?? user.email} · Out
+              </button>
             ) : (
               <a
                 href={`${API_URL}/auth/google`}
@@ -160,28 +178,64 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
                   color: 'var(--color-ink)',
                   textDecoration: 'none',
                 }}
-              >Sign in</a>
+              >
+                Sign in
+              </a>
             )}
 
             {/* Search */}
-            <button data-hover aria-label="Search" style={{ color: 'var(--color-ink)', position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button
+              data-hover
+              aria-label="Search"
+              style={{
+                color: 'var(--color-ink)',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1"/>
-                <line x1="11.5" y1="11.5" x2="16.5" y2="16.5" stroke="currentColor" strokeWidth="1"/>
+                <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1" />
+                <line
+                  x1="11.5"
+                  y1="11.5"
+                  x2="16.5"
+                  y2="16.5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
               </svg>
             </button>
 
             {/* Cart */}
-            <button data-hover onClick={onCartOpen} aria-label="Shopping bag" style={{ color: 'var(--color-ink)', position: 'relative', display: 'flex', alignItems: 'center', background: 'none', border: 'none' }}>
+            <button
+              data-hover
+              onClick={onCartOpen}
+              aria-label="Shopping bag"
+              style={{
+                color: 'var(--color-ink)',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                background: 'none',
+                border: 'none',
+              }}
+            >
               <svg width="18" height="20" viewBox="0 0 18 20" fill="none">
-                <path d="M1 5.5H17L15 18.5H3L1 5.5Z" stroke="currentColor" strokeWidth="1"/>
-                <path d="M6 5.5C6 3.84 7.34 2.5 9 2.5C10.66 2.5 12 3.84 12 5.5" stroke="currentColor" strokeWidth="1"/>
+                <path d="M1 5.5H17L15 18.5H3L1 5.5Z" stroke="currentColor" strokeWidth="1" />
+                <path
+                  d="M6 5.5C6 3.84 7.34 2.5 9 2.5C10.66 2.5 12 3.84 12 5.5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
               </svg>
               <span
                 style={{
                   position: 'absolute',
-                  top: -6, right: -6,
-                  width: 16, height: 16,
+                  top: -6,
+                  right: -6,
+                  width: 16,
+                  height: 16,
                   background: 'var(--color-ink)',
                   color: 'var(--color-bg)',
                   fontSize: 9,
@@ -194,7 +248,9 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
                   animation: pulsing ? 'cartPulse 400ms var(--ease-out)' : 'none',
                   letterSpacing: 0,
                 }}
-              >{cartCount}</span>
+              >
+                {cartCount}
+              </span>
             </button>
 
             {/* Hamburger */}
@@ -205,8 +261,11 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
               className="hamburger-btn"
               style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: 4 }}
             >
-              {[0,1,2].map(i => (
-                <span key={i} style={{ display: 'block', width: 22, height: 1, background: 'var(--color-ink)' }} />
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{ display: 'block', width: 22, height: 1, background: 'var(--color-ink)' }}
+                />
               ))}
             </button>
           </div>

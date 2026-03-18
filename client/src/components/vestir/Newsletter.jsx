@@ -42,36 +42,46 @@ export default function Newsletter() {
         borderBottom: '1px solid rgba(26,25,22,0.12)',
       }}
     >
-      <h2 style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: 'clamp(36px, 6vw, 80px)',
-        fontWeight: 300,
-        letterSpacing: '-0.01em',
-        color: 'var(--color-ink)',
-        marginBottom: 16,
-      }}>Stay in the loop.</h2>
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'clamp(36px, 6vw, 80px)',
+          fontWeight: 300,
+          letterSpacing: '-0.01em',
+          color: 'var(--color-ink)',
+          marginBottom: 16,
+        }}
+      >
+        Stay in the loop.
+      </h2>
 
-      <p style={{
-        fontFamily: 'var(--font-body)',
-        fontSize: 14,
-        fontWeight: 300,
-        color: 'var(--color-muted)',
-        marginBottom: 48,
-        maxWidth: 420,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        lineHeight: 1.7,
-      }}>
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 14,
+          fontWeight: 300,
+          color: 'var(--color-muted)',
+          marginBottom: 48,
+          maxWidth: 420,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          lineHeight: 1.7,
+        }}
+      >
         New arrivals, rare editorials, and quiet announcements — delivered with intention.
       </p>
 
       {submitted ? (
-        <p style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 20,
-          fontStyle: 'italic',
-          color: 'var(--color-accent)',
-        }}>{"Thank you. You're in."}</p>
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 20,
+            fontStyle: 'italic',
+            color: 'var(--color-accent)',
+          }}
+        >
+          {"Thank you. You're in."}
+        </p>
       ) : (
         <form
           onSubmit={handleSubmit}
@@ -82,7 +92,7 @@ export default function Newsletter() {
           <input
             type="email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             aria-label="Email address"
             required
@@ -118,7 +128,9 @@ export default function Newsletter() {
               whiteSpace: 'nowrap',
             }}
             className="newsletter-btn"
-          >Subscribe</button>
+          >
+            Subscribe
+          </button>
         </form>
       )}
 

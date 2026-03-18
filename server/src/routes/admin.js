@@ -14,16 +14,39 @@ router.use(requireAuth, requireAdmin);
 router.post('/products', async (req, res, next) => {
   try {
     const {
-      name, slug, category, categoryLabel, price, priceLabel,
-      imgUrl, hoverImgUrl, imgClass, hoverClass, filter,
-      isActive, details, materials, shipping,
+      name,
+      slug,
+      category,
+      categoryLabel,
+      price,
+      priceLabel,
+      imgUrl,
+      hoverImgUrl,
+      imgClass,
+      hoverClass,
+      filter,
+      isActive,
+      details,
+      materials,
+      shipping,
     } = req.body;
     const product = await prisma.product.create({
       data: {
-        name, slug, category, categoryLabel, price: parseInt(price, 10),
-        priceLabel, imgUrl, hoverImgUrl, imgClass, hoverClass, filter,
+        name,
+        slug,
+        category,
+        categoryLabel,
+        price: parseInt(price, 10),
+        priceLabel,
+        imgUrl,
+        hoverImgUrl,
+        imgClass,
+        hoverClass,
+        filter,
         isActive: isActive !== undefined ? Boolean(isActive) : true,
-        details, materials, shipping,
+        details,
+        materials,
+        shipping,
       },
     });
     res.status(201).json(product);
@@ -39,9 +62,21 @@ router.put('/products/:id', async (req, res, next) => {
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid product id' });
 
     const {
-      name, slug, category, categoryLabel, price, priceLabel,
-      imgUrl, hoverImgUrl, imgClass, hoverClass, filter,
-      isActive, details, materials, shipping,
+      name,
+      slug,
+      category,
+      categoryLabel,
+      price,
+      priceLabel,
+      imgUrl,
+      hoverImgUrl,
+      imgClass,
+      hoverClass,
+      filter,
+      isActive,
+      details,
+      materials,
+      shipping,
     } = req.body;
 
     const data = {};
@@ -89,10 +124,20 @@ router.post('/products/:id/image', upload.single('image'), async (req, res, next
     if (!req.file) return res.status(400).json({ error: 'No image file provided' });
 
     const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { folder: 'vestir/products', public_id: `product_${id}`, overwrite: true, resource_type: 'image' },
-        (err, result) => { if (err) reject(err); else resolve(result); }
-      ).end(req.file.buffer);
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: 'vestir/products',
+            public_id: `product_${id}`,
+            overwrite: true,
+            resource_type: 'image',
+          },
+          (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          }
+        )
+        .end(req.file.buffer);
     });
 
     const product = await prisma.product.update({

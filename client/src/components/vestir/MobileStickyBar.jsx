@@ -8,7 +8,9 @@ export default function MobileStickyBar({ onAdd }) {
     if (!arrivalsEl) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => { setVisible(entry.isIntersecting); },
+      ([entry]) => {
+        setVisible(entry.isIntersecting);
+      },
       { threshold: 0.05 }
     );
     observer.observe(arrivalsEl);
@@ -21,7 +23,9 @@ export default function MobileStickyBar({ onAdd }) {
         className="mobile-sticky-bar"
         style={{
           position: 'fixed',
-          bottom: 0, left: 0, right: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
           height: 64,
           background: 'var(--color-ink)',
           color: 'var(--color-bg)',
@@ -48,7 +52,9 @@ export default function MobileStickyBar({ onAdd }) {
             width: '100%',
             height: '100%',
           }}
-        >ADD TO BAG — ₹4,200</button>
+        >
+          ADD TO BAG — ₹4,200
+        </button>
       </div>
       <style>{`
         @media (max-width: 767px) {

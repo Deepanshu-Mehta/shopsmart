@@ -1,19 +1,22 @@
 import { useEffect, useRef } from 'react';
 
 export default function Cursor() {
-  const dotRef   = useRef(null);
+  const dotRef = useRef(null);
   const trailRef = useRef(null);
 
   useEffect(() => {
-    const dot   = dotRef.current;
+    const dot = dotRef.current;
     const trail = trailRef.current;
 
-    let mx = -200, my = -200;
-    let tx = -200, ty = -200;
+    let mx = -200,
+      my = -200;
+    let tx = -200,
+      ty = -200;
     let rafId;
 
     const onMove = (e) => {
-      mx = e.clientX; my = e.clientY;
+      mx = e.clientX;
+      my = e.clientY;
       dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
     };
 
@@ -25,14 +28,14 @@ export default function Cursor() {
     }
     animateTrail();
 
-    const addHover   = () => document.body.classList.add('cursor-hover');
+    const addHover = () => document.body.classList.add('cursor-hover');
     const removeHover = () => document.body.classList.remove('cursor-hover');
 
     const interactiveSelector = 'a, button, input, [data-hover]';
     const hoverEls = () => document.querySelectorAll(interactiveSelector);
 
     function attachHover() {
-      hoverEls().forEach(el => {
+      hoverEls().forEach((el) => {
         el.addEventListener('mouseenter', addHover);
         el.addEventListener('mouseleave', removeHover);
       });
@@ -53,8 +56,8 @@ export default function Cursor() {
 
   return (
     <>
-      <div ref={dotRef}   className="cursor-dot"   aria-hidden="true" />
-      <div ref={trailRef} className="cursor-trail"  aria-hidden="true" />
+      <div ref={dotRef} className="cursor-dot" aria-hidden="true" />
+      <div ref={trailRef} className="cursor-trail" aria-hidden="true" />
     </>
   );
 }
