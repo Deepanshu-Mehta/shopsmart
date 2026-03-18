@@ -23,23 +23,56 @@ const itemQty1 = [
 
 describe('CartDrawer', () => {
   it('is off-screen when open=false', () => {
-    render(<CartDrawer open={false} onClose={() => {}} user={null} cartItems={[]} onCartItemsChange={() => {}} />);
-    const drawer = screen.getByRole('dialog', { name: /Shopping bag/i });
-    expect(drawer).toHaveStyle({ transform: 'translateX(100%)' });
+    render(
+      <CartDrawer
+        open={false}
+        onClose={() => {}}
+        user={null}
+        cartItems={[]}
+        onCartItemsChange={() => {}}
+      />
+    );
+    // Drawer is hidden via CSS — query directly since visibility:hidden removes it from a11y tree
+    const drawer = document.querySelector('[role="dialog"][aria-label="Shopping bag"]');
+    expect(drawer).toHaveStyle({ transform: 'translateX(100%)', visibility: 'hidden' });
   });
 
   it('shows sign-in prompt when user=null', () => {
-    render(<CartDrawer open={true} onClose={() => {}} user={null} cartItems={[]} onCartItemsChange={() => {}} />);
+    render(
+      <CartDrawer
+        open={true}
+        onClose={() => {}}
+        user={null}
+        cartItems={[]}
+        onCartItemsChange={() => {}}
+      />
+    );
     expect(screen.getByText(/Sign in to view your bag/i)).toBeInTheDocument();
   });
 
   it('shows empty bag message when cartItems is empty', () => {
-    render(<CartDrawer open={true} onClose={() => {}} user={{ id: 'u1' }} cartItems={[]} onCartItemsChange={() => {}} />);
+    render(
+      <CartDrawer
+        open={true}
+        onClose={() => {}}
+        user={{ id: 'u1' }}
+        cartItems={[]}
+        onCartItemsChange={() => {}}
+      />
+    );
     expect(screen.getByText(/Your bag is empty/i)).toBeInTheDocument();
   });
 
   it('renders cart items from props immediately without fetching', () => {
-    render(<CartDrawer open={true} onClose={() => {}} user={{ id: 'u1' }} cartItems={items} onCartItemsChange={() => {}} />);
+    render(
+      <CartDrawer
+        open={true}
+        onClose={() => {}}
+        user={{ id: 'u1' }}
+        cartItems={items}
+        onCartItemsChange={() => {}}
+      />
+    );
     expect(screen.getByText('Linen Drape Top')).toBeInTheDocument();
     expect(screen.getByText('M · Sand')).toBeInTheDocument();
     expect(screen.getByText('₹4,200')).toBeInTheDocument();
@@ -48,7 +81,15 @@ describe('CartDrawer', () => {
 
   it('calls onClose when close button is clicked', () => {
     const onClose = vi.fn();
-    render(<CartDrawer open={true} onClose={onClose} user={null} cartItems={[]} onCartItemsChange={() => {}} />);
+    render(
+      <CartDrawer
+        open={true}
+        onClose={onClose}
+        user={null}
+        cartItems={[]}
+        onCartItemsChange={() => {}}
+      />
+    );
     fireEvent.click(screen.getByRole('button', { name: /Close bag/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -58,7 +99,13 @@ describe('CartDrawer', () => {
     fetch.mockResolvedValue({ ok: true });
 
     render(
-      <CartDrawer open={true} onClose={() => {}} user={{ id: 'u1' }} cartItems={items} onCartItemsChange={onCartItemsChange} />
+      <CartDrawer
+        open={true}
+        onClose={() => {}}
+        user={{ id: 'u1' }}
+        cartItems={items}
+        onCartItemsChange={onCartItemsChange}
+      />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Remove item/i }));
@@ -76,7 +123,13 @@ describe('CartDrawer', () => {
     fetch.mockResolvedValue({ ok: true });
 
     render(
-      <CartDrawer open={true} onClose={() => {}} user={{ id: 'u1' }} cartItems={items} onCartItemsChange={onCartItemsChange} />
+      <CartDrawer
+        open={true}
+        onClose={() => {}}
+        user={{ id: 'u1' }}
+        cartItems={items}
+        onCartItemsChange={onCartItemsChange}
+      />
     );
 
     fireEvent.click(screen.getByLabelText('Decrease'));
@@ -93,7 +146,13 @@ describe('CartDrawer', () => {
     fetch.mockResolvedValue({ ok: true });
 
     render(
-      <CartDrawer open={true} onClose={() => {}} user={{ id: 'u1' }} cartItems={itemQty1} onCartItemsChange={onCartItemsChange} />
+      <CartDrawer
+        open={true}
+        onClose={() => {}}
+        user={{ id: 'u1' }}
+        cartItems={itemQty1}
+        onCartItemsChange={onCartItemsChange}
+      />
     );
 
     fireEvent.click(screen.getByLabelText('Decrease'));

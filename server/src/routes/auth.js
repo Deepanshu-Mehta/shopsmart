@@ -13,6 +13,13 @@ const COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
+// clearCookie must not include maxAge — it overrides the expiry to the past
+const CLEAR_COOKIE_OPTIONS = {
+  httpOnly: COOKIE_OPTIONS.httpOnly,
+  secure: COOKIE_OPTIONS.secure,
+  sameSite: COOKIE_OPTIONS.sameSite,
+};
+
 function signToken(user) {
   return jwt.sign({ sub: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -64,9 +71,7 @@ router.post('/logout', async (req, res) => {
     }
   }
 
-  // eslint-disable-next-line no-unused-vars
-  const { maxAge: _maxAge, ...clearCookieOptions } = COOKIE_OPTIONS;
-  res.clearCookie('token', clearCookieOptions);
+  res.clearCookie('token', CLEAR_COOKIE_OPTIONS);
   res.json({ message: 'Logged out' });
 });
 

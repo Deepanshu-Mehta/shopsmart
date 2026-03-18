@@ -92,7 +92,10 @@ export default function CartDrawer({ open, onClose, user, cartItems = [], onCart
           background: 'var(--color-bg)',
           zIndex: 2001,
           transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 500ms cubic-bezier(0.16,1,0.3,1)',
+          visibility: open ? 'visible' : 'hidden',
+          transition: open
+            ? 'transform 500ms cubic-bezier(0.16,1,0.3,1), visibility 0ms 0ms'
+            : 'transform 500ms cubic-bezier(0.16,1,0.3,1), visibility 0ms 500ms',
           display: 'flex',
           flexDirection: 'column',
           willChange: 'transform',

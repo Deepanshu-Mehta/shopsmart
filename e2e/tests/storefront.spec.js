@@ -19,7 +19,7 @@ test.beforeEach(async ({ context, page }) => {
 
 test.describe('Storefront', () => {
   test('VESTIR brand is visible and products load from real API', async ({ page }) => {
-    await expect(page.getByText('VESTIR')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'VESTIR', exact: true })).toBeVisible();
 
     // At least one product card from the seeded database
     const cards = page.locator('.product-card');

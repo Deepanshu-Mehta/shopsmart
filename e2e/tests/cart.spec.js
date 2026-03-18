@@ -57,7 +57,7 @@ test.describe('Cart', () => {
     await expect(panel).toBeVisible({ timeout: 5_000 });
 
     // Select size M and colour Sand
-    await panel.getByRole('button', { name: 'M' }).click();
+    await panel.getByRole('button', { name: 'M', exact: true }).click();
     await panel.getByRole('button', { name: 'Sand' }).click();
 
     // Add to bag
