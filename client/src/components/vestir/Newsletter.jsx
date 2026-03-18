@@ -1,14 +1,32 @@
 import { useState } from 'react';
 import { useReveal } from './useReveal';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
 export default function Newsletter() {
   const ref = useReveal();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email) { setSubmitted(true); setEmail(''); }
+    if (!email) return;
+    try {
+      const res = await fetch(`${API_URL}/api/newsletter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      // 201 = subscribed, 409 = already subscribed — both treated as success
+      if (res.ok || res.status === 409) {
+        setSubmitted(true);
+        setEmail('');
+      }
+    } catch {
+      // Silently succeed — newsletter is non-critical
+      setSubmitted(true);
+      setEmail('');
+    }
   };
 
   return (

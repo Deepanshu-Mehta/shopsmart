@@ -1,7 +1,28 @@
-node_modules
-.DS_Store
+# Dependencies
+node_modules/
+
+# Environment variables — NEVER commit secrets
 .env
-dist
-build
-coverage
-.vercel
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Vercel
+.vercel/
+
+# Prisma generated client
+**/generated/prisma/
+**/.prisma/

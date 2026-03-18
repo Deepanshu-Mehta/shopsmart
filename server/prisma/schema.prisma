@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  googleId  String?  @unique
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  cart      Cart?
+}
+
+model Product {
+  id            Int        @id @default(autoincrement())
+  name          String
+  slug          String     @unique
+  category      String
+  categoryLabel String
+  price         Int
+  priceLabel    String
+  imgUrl        String?
+  hoverImgUrl   String?
+  imgClass      String
+  hoverClass    String
+  filter        String
+  isActive      Boolean    @default(true)
+  details       String     @db.Text
+  materials     String     @db.Text
+  shipping      String     @db.Text
+  createdAt     DateTime   @default(now())
+  cartItems     CartItem[]
+}
+
+model Cart {
+  id     String     @id @default(cuid())
+  userId String     @unique
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  size      String
+  color     String
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

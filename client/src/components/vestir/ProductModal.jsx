@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
 const COLORS = [
   { bg: '#C8B09A', label: 'Sand'  },
@@ -9,18 +11,24 @@ const COLORS = [
 ];
 
 export default function ProductModal({ product, onClose, onAddToCart }) {
-  const [size, setSize]       = useState('S');
-  const [color, setColor]     = useState('Sand');
-  const [qty, setQty]         = useState(1);
-  const [open, setOpen]       = useState(false);
-  const [addState, setAddState] = useState('idle');
+  const [size, setSize]           = useState('S');
+  const [color, setColor]         = useState('Sand');
+  const [qty, setQty]             = useState(1);
+  const [open, setOpen]           = useState(false);
+  const [addState, setAddState]   = useState('idle');
   const [accordionOpen, setAccordionOpen] = useState(null);
+  const [fullProduct, setFullProduct] = useState(null);
 
   useEffect(() => {
     if (product) {
       requestAnimationFrame(() => setOpen(true));
       document.body.style.overflow = 'hidden';
       setSize('S'); setColor('Sand'); setQty(1); setAddState('idle'); setAccordionOpen(null);
+      setFullProduct(null);
+      fetch(`${API_URL}/api/products/${product.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setFullProduct(data); })
+        .catch(() => {});
     } else {
       setOpen(false);
       document.body.style.overflow = '';
@@ -46,20 +54,21 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
     setAddState('adding');
     setTimeout(() => {
       setAddState('added');
-      onAddToCart();
+      onAddToCart(product, { size, color, quantity: qty });
       setTimeout(() => { setAddState('idle'); }, 1500);
     }, 600);
   };
 
   const addLabel = addState === 'adding' ? 'ADDING...' : addState === 'added' ? 'ADDED ✓' : 'ADD TO BAG';
 
-  const accordions = [
-    { key: 'details',   label: 'Details',   text: 'Crafted in our Mumbai atelier from stone-washed European linen. Each piece is finished by hand and carries a subtle irregularity that speaks to its artisanal origin. True-to-size fit.' },
-    { key: 'materials', label: 'Materials', text: '100% European Linen (OEKO-TEX certified). Stone-washed finish for natural texture and softness. Fully biodegradable. No synthetic blends.' },
-    { key: 'shipping',  label: 'Shipping',  text: 'Free standard shipping on orders over ₹5,000. Express delivery available. Ships in 2–4 business days. Easy 30-day returns on unworn items with tags attached.' },
-  ];
-
   if (!product) return null;
+
+  const p = fullProduct || product;
+  const accordions = [
+    { key: 'details',   label: 'Details',   text: p.details   || 'Loading…' },
+    { key: 'materials', label: 'Materials', text: p.materials || 'Loading…' },
+    { key: 'shipping',  label: 'Shipping',  text: p.shipping  || 'Loading…' },
+  ];
 
   return (
     <>
@@ -123,11 +132,19 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
         </div>
 
         {/* Image */}
-        <div
-          className={product.imgClass}
-          style={{ aspectRatio: '3/4', width: '100%' }}
-          aria-hidden="true"
-        />
+        {product.imgUrl ? (
+          <img
+            src={product.imgUrl}
+            alt={product.name}
+            style={{ aspectRatio: '3/4', width: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div
+            className={product.imgClass}
+            style={{ aspectRatio: '3/4', width: '100%' }}
+            aria-hidden="true"
+          />
+        )}
 
         {/* Body */}
         <div style={{ padding: 32, flex: 1 }}>
@@ -150,7 +167,7 @@ export default function ProductModal({ product, onClose, onAddToCart }) {
             fontSize: 28,
             fontWeight: 300,
             marginBottom: 32,
-          }}>{product.price}</p>
+          }}>{product.priceLabel || product.price}</p>
 
           {/* Size */}
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--color-muted)', marginBottom: 12 }}>Select Size</p>

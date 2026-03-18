@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function Nav({ cartCount }) {
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
   const [scrolled, setScrolled]   = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
   const [pulsing, setPulsing]     = useState(false);
@@ -129,6 +131,38 @@ export default function Nav({ cartCount }) {
 
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            {/* Login / User */}
+            {user ? (
+              <button
+                data-hover
+                onClick={onLogout}
+                aria-label="Log out"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-muted)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'none',
+                }}
+              >{user.name?.split(' ')[0] ?? user.email} · Out</button>
+            ) : (
+              <a
+                href={`${API_URL}/auth/google`}
+                data-hover
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-ink)',
+                  textDecoration: 'none',
+                }}
+              >Sign in</a>
+            )}
+
             {/* Search */}
             <button data-hover aria-label="Search" style={{ color: 'var(--color-ink)', position: 'relative', display: 'flex', alignItems: 'center' }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -138,7 +172,7 @@ export default function Nav({ cartCount }) {
             </button>
 
             {/* Cart */}
-            <button data-hover aria-label="Shopping bag" style={{ color: 'var(--color-ink)', position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button data-hover onClick={onCartOpen} aria-label="Shopping bag" style={{ color: 'var(--color-ink)', position: 'relative', display: 'flex', alignItems: 'center', background: 'none', border: 'none' }}>
               <svg width="18" height="20" viewBox="0 0 18 20" fill="none">
                 <path d="M1 5.5H17L15 18.5H3L1 5.5Z" stroke="currentColor" strokeWidth="1"/>
                 <path d="M6 5.5C6 3.84 7.34 2.5 9 2.5C10.66 2.5 12 3.84 12 5.5" stroke="currentColor" strokeWidth="1"/>

@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useReveal } from './useReveal';
-import { PRODUCTS } from './products.js';
+import { useProducts } from './products.js';
 
 const FILTERS = ['all', 'tops', 'bottoms', 'outerwear', 'accessories'];
 
 export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const gridRef = useReveal({ gridMode: true });
+  const { products, loading } = useProducts();
 
-  const visible = PRODUCTS.filter(p => activeFilter === 'all' || p.filter === activeFilter);
+  const visible = products.filter(p => activeFilter === 'all' || p.filter === activeFilter);
 
   return (
     <section
@@ -90,7 +91,11 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
           gap: '32px 24px',
         }}
       >
-        {visible.map(p => (
+        {loading ? (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '64px 0', fontFamily: 'var(--font-body)', fontSize: 12, letterSpacing: '0.2em', color: 'var(--color-muted)', textTransform: 'uppercase' }}>
+            Loading…
+          </div>
+        ) : visible.map(p => (
           <article
             key={p.id}
             className="product-card"
@@ -105,27 +110,59 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
               marginBottom: 16,
             }}>
               {/* default img */}
-              <div
-                className={`product-img-default ${p.imgClass}`}
-                style={{
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  transition: 'opacity 400ms var(--ease-out)',
-                  willChange: 'transform',
-                }}
-              />
+              {p.imgUrl ? (
+                <img
+                  src={p.imgUrl}
+                  alt={p.name}
+                  className="product-img-default"
+                  style={{
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    objectFit: 'cover',
+                    transition: 'opacity 400ms var(--ease-out)',
+                    willChange: 'transform',
+                  }}
+                />
+              ) : (
+                <div
+                  className={`product-img-default ${p.imgClass}`}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    transition: 'opacity 400ms var(--ease-out)',
+                    willChange: 'transform',
+                  }}
+                />
+              )}
               {/* hover img */}
-              <div
-                className={`product-img-hover ${p.hoverClass}`}
-                style={{
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  opacity: 0,
-                  border: '2px solid rgba(200,169,110,0.3)',
-                  transition: 'opacity 400ms var(--ease-out)',
-                  willChange: 'transform',
-                }}
-              />
+              {p.hoverImgUrl ? (
+                <img
+                  src={p.hoverImgUrl}
+                  alt={`${p.name} alternate view`}
+                  className="product-img-hover"
+                  style={{
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    objectFit: 'cover',
+                    opacity: 0,
+                    border: '2px solid rgba(200,169,110,0.3)',
+                    transition: 'opacity 400ms var(--ease-out)',
+                    willChange: 'transform',
+                  }}
+                />
+              ) : (
+                <div
+                  className={`product-img-hover ${p.hoverClass}`}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    width: '100%', height: '100%',
+                    opacity: 0,
+                    border: '2px solid rgba(200,169,110,0.3)',
+                    transition: 'opacity 400ms var(--ease-out)',
+                    willChange: 'transform',
+                  }}
+                />
+              )}
               {/* quick add */}
               <button
                 className="quick-add-btn"
@@ -174,7 +211,7 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
                 fontSize: 18,
                 fontWeight: 300,
                 color: 'var(--color-ink)',
-              }}>{p.price}</p>
+              }}>{p.priceLabel}</p>
             </div>
           </article>
         ))}
