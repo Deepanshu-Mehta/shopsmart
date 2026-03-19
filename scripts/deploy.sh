@@ -25,6 +25,10 @@ done
 mkdir -p "$LOG_DIR" "$SERVER_DIR/uploads"
 
 # ── Install server dependencies (reproducible, no devDependencies) ──────────
+# Stop PM2 first to free RAM on t2.micro during npm ci
+echo "==> Stopping PM2 to free memory during install"
+pm2 stop all 2>/dev/null || true
+
 echo "==> Installing server dependencies"
 npm ci --omit=dev --ignore-scripts --no-audit --prefix "$SERVER_DIR"
 
