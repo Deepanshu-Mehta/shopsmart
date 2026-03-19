@@ -26,17 +26,17 @@ mkdir -p "$LOG_DIR" "$SERVER_DIR/uploads"
 
 # ── Install server dependencies (reproducible, no devDependencies) ──────────
 echo "==> Installing server dependencies"
-npm ci --omit=dev --prefix "$SERVER_DIR"
+npm ci --omit=dev --ignore-scripts --no-audit --prefix "$SERVER_DIR"
 
 # ── Generate Prisma client & run migrations (must run from SERVER_DIR so .env is found) ──
 cd "$SERVER_DIR"
 
 echo "==> Generating Prisma client"
-npx prisma generate
+"$SERVER_DIR/node_modules/.bin/prisma" generate
 
 if [ "$SKIP_MIGRATE" = false ]; then
   echo "==> Running database migrations"
-  npx prisma migrate deploy
+  "$SERVER_DIR/node_modules/.bin/prisma" migrate deploy
 else
   echo "==> Skipping database migrations (--skip-migrate)"
 fi
@@ -54,10 +54,22 @@ fi
 
 # ── Start / restart server process via PM2 ───────────────────────────────────
 echo "==> Starting/restarting server with PM2"
-pm2 restart vestir-server 2>/dev/null \
-  || pm2 start "$SERVER_DIR/ecosystem.config.js" --env production
+if pm2 describe vestir-server > /dev/null 2>&1; then
+  pm2 restart vestir-server --update-env
+else
+  pm2 start "$SERVER_DIR/ecosystem.config.js" --env production
+fi
 
 # Persist process list so it survives reboots
 pm2 save
+
+# ── Verify process is online (not errored) ────────────────────────────────────
+echo "==> Verifying server status"
+sleep 3
+STATUS=$(pm2 jlist | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8'); const app=JSON.parse(d).find(a=>a.name==='vestir-server'); process.stdout.write(app ? app.pm2_env.status : 'not_found')")
+if [ "$STATUS" != "online" ]; then
+  echo "ERROR: vestir-server status is '$STATUS' — check logs with: pm2 logs vestir-server"
+  exit 1
+fi
 
 echo "==> Deploy complete at $(date)"
