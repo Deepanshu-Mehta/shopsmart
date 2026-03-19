@@ -35,41 +35,43 @@ passport.use(
   )
 );
 
-// Google OAuth2 Strategy
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email = profile.emails?.[0]?.value;
-        if (!email) return done(new Error('No email from Google profile'), false);
+// Google OAuth2 Strategy — only registered if credentials are provided
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const email = profile.emails?.[0]?.value;
+          if (!email) return done(new Error('No email from Google profile'), false);
 
-        // Try to find by googleId first
-        let user = await prisma.user.findUnique({ where: { googleId: profile.id } });
+          // Try to find by googleId first
+          let user = await prisma.user.findUnique({ where: { googleId: profile.id } });
 
-        if (!user) {
-          // Link to existing account by email, or create new
-          user = await prisma.user.upsert({
-            where: { email },
-            update: { googleId: profile.id, name: profile.displayName },
-            create: {
-              email,
-              name: profile.displayName,
-              googleId: profile.id,
-            },
-          });
+          if (!user) {
+            // Link to existing account by email, or create new
+            user = await prisma.user.upsert({
+              where: { email },
+              update: { googleId: profile.id, name: profile.displayName },
+              create: {
+                email,
+                name: profile.displayName,
+                googleId: profile.id,
+              },
+            });
+          }
+
+          return done(null, user);
+        } catch (err) {
+          return done(err, false);
         }
-
-        return done(null, user);
-      } catch (err) {
-        return done(err, false);
       }
-    }
-  )
-);
+    )
+  );
+}
 
 module.exports = passport;
