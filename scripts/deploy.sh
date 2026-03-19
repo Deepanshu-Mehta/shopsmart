@@ -56,13 +56,17 @@ else
   echo "==> Skipping client build (--skip-build)"
 fi
 
-# ── Start / restart server process via PM2 ───────────────────────────────────
+# ── Restart server process via PM2 ───────────────────────────────────────────
 echo "==> Starting/restarting server with PM2"
 if pm2 describe vestir-server > /dev/null 2>&1; then
   pm2 restart vestir-server --update-env
 else
   pm2 start "$SERVER_DIR/ecosystem.config.js" --env production
 fi
+
+# ── Restart any other stopped PM2 processes ──────────────────────────────────
+echo "==> Resuming any stopped PM2 processes"
+pm2 restart all --update-env 2>/dev/null || true
 
 # Persist process list so it survives reboots
 pm2 save
