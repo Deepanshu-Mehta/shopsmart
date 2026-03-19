@@ -13,6 +13,7 @@ import Footer from './components/vestir/Footer';
 import ProductModal from './components/vestir/ProductModal';
 import CartDrawer from './components/vestir/CartDrawer';
 import MobileStickyBar from './components/vestir/MobileStickyBar';
+import AuthModal from './components/vestir/AuthModal';
 
 const Cursor = lazy(() => import('./components/vestir/Cursor'));
 
@@ -21,6 +22,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 export default function App() {
   const [cartItems, setCartItems] = useState([]); // source of truth for cart
   const [cartOpen, setCartOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [activeProduct, setActiveProduct] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -30,16 +32,23 @@ export default function App() {
   useEffect(() => {
     fetch(`${API_URL}/auth/me`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) setUser(data); })
+      .then((data) => {
+        if (data) setUser(data);
+      })
       .catch(() => {});
   }, []);
 
   // Load cart whenever user logs in
   useEffect(() => {
-    if (!user) { setCartItems([]); return; }
+    if (!user) {
+      setCartItems([]);
+      return;
+    }
     fetch(`${API_URL}/api/cart`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) setCartItems(data.items); })
+      .then((data) => {
+        if (data) setCartItems(data.items);
+      })
       .catch(() => {});
   }, [user]);
 
@@ -58,7 +67,8 @@ export default function App() {
         const existing = prev.find(
           (i) => i.product?.id === product.id && i.size === size && i.color === color
         );
-        if (existing) return prev.map((i) => i === existing ? { ...i, quantity: i.quantity + quantity } : i);
+        if (existing)
+          return prev.map((i) => (i === existing ? { ...i, quantity: i.quantity + quantity } : i));
         return [...prev, { id: `guest-${Date.now()}`, product, quantity, size, color }];
       });
       return;
@@ -71,7 +81,7 @@ export default function App() {
         (i) => i.product?.id === product.id && i.size === size && i.color === color
       );
       if (existing) {
-        return prev.map((i) => i === existing ? { ...i, quantity: i.quantity + quantity } : i);
+        return prev.map((i) => (i === existing ? { ...i, quantity: i.quantity + quantity } : i));
       }
       return [...prev, { id: tempId, product, quantity, size, color }];
     });
@@ -86,7 +96,7 @@ export default function App() {
       if (res.ok) {
         const item = await res.json();
         // Replace temp placeholder with real server item (gives us real ID)
-        setCartItems((prev) => prev.map((i) => i.id === tempId ? item : i));
+        setCartItems((prev) => prev.map((i) => (i.id === tempId ? item : i)));
       }
     } catch {
       // Revert optimistic update on failure
@@ -96,7 +106,9 @@ export default function App() {
           (i) => i.product?.id === product.id && i.size === size && i.color === color
         );
         if (existing) {
-          return withoutTemp.map((i) => i === existing ? { ...i, quantity: i.quantity - quantity } : i);
+          return withoutTemp.map((i) =>
+            i === existing ? { ...i, quantity: i.quantity - quantity } : i
+          );
         }
         return withoutTemp;
       });
@@ -113,12 +125,16 @@ export default function App() {
         user={user}
         onLogout={logout}
         onCartOpen={() => setCartOpen(true)}
+        onAuthOpen={() => setAuthOpen(true)}
       />
       <main>
         <Hero />
         <Ticker />
         <Categories />
-        <ProductGrid onOpenProduct={setActiveProduct} onQuickAdd={(product) => addToCart(product)} />
+        <ProductGrid
+          onOpenProduct={setActiveProduct}
+          onQuickAdd={(product) => addToCart(product)}
+        />
         <BrandStory />
         <Editorial onOpenProduct={setActiveProduct} />
         <Press />
@@ -136,6 +152,12 @@ export default function App() {
         user={user}
         cartItems={cartItems}
         onCartItemsChange={setCartItems}
+        onAuthOpen={() => setAuthOpen(true)}
+      />
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onLogin={(data) => setUser(data)}
       />
       <MobileStickyBar onAdd={() => addToCart(activeProduct)} />
     </>

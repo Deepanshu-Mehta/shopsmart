@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-export default function CartDrawer({ open, onClose, user, cartItems = [], onCartItemsChange }) {
+export default function CartDrawer({
+  open,
+  onClose,
+  user,
+  cartItems = [],
+  onCartItemsChange,
+  onAuthOpen,
+}) {
   const [syncError, setSyncError] = useState('');
 
   useEffect(() => {
@@ -165,8 +172,8 @@ export default function CartDrawer({ open, onClose, user, cartItems = [], onCart
               >
                 Sign in to view your bag
               </p>
-              <a
-                href={`${API_URL}/auth/google`}
+              <button
+                onClick={onAuthOpen}
                 style={{
                   display: 'inline-block',
                   padding: '14px 32px',
@@ -176,11 +183,12 @@ export default function CartDrawer({ open, onClose, user, cartItems = [], onCart
                   fontSize: 11,
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
-                  textDecoration: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
                 }}
               >
-                Sign in with Google
-              </a>
+                Sign in
+              </button>
             </div>
           ) : cartItems.length === 0 ? (
             <div style={{ textAlign: 'center', paddingTop: 64 }}>

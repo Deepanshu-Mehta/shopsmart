@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
+export default function Nav({ cartCount, user, onLogout, onCartOpen, onAuthOpen }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pulsing, setPulsing] = useState(false);
@@ -167,8 +165,8 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
                 {user.name?.split(' ')[0] ?? user.email} · Out
               </button>
             ) : (
-              <a
-                href={`${API_URL}/auth/google`}
+              <button
+                onClick={onAuthOpen}
                 data-hover
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -176,11 +174,13 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen }) {
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   color: 'var(--color-ink)',
-                  textDecoration: 'none',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'none',
                 }}
               >
                 Sign in
-              </a>
+              </button>
             )}
 
             {/* Search */}
