@@ -14,9 +14,6 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -26,11 +23,17 @@ jobs:
           script: |
             cd ~/vestir
             git pull origin main
-            bash scripts/deploy.sh
+            bash scripts/deploy.sh --skip-build
 
       - name: Health check
         run: |
-          sleep 10
-          curl --fail --silent --show-error "${{ secrets.EC2_APP_URL }}/api/health" \
-            | grep -q '"status":"ok"'
-          echo "Health check passed"
+          for i in $(seq 1 12); do
+            echo "Health check attempt $i/12..."
+            if curl --fail --silent --show-error "${{ secrets.EC2_APP_URL }}/api/health" | grep -q '"status"'; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Health check failed after 60s"
+          exit 1

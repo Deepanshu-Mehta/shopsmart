@@ -28,17 +28,20 @@ mkdir -p "$LOG_DIR" "$SERVER_DIR/uploads"
 echo "==> Installing server dependencies"
 npm ci --omit=dev --prefix "$SERVER_DIR"
 
-# ── Generate Prisma client (always safe to re-run) ───────────────────────────
-echo "==> Generating Prisma client"
-npx prisma generate --schema="$SERVER_DIR/prisma/schema.prisma"
+# ── Generate Prisma client & run migrations (must run from SERVER_DIR so .env is found) ──
+cd "$SERVER_DIR"
 
-# ── Run database migrations (no-op if already applied) ───────────────────────
+echo "==> Generating Prisma client"
+npx prisma generate
+
 if [ "$SKIP_MIGRATE" = false ]; then
   echo "==> Running database migrations"
-  npx prisma migrate deploy --schema="$SERVER_DIR/prisma/schema.prisma"
+  npx prisma migrate deploy
 else
   echo "==> Skipping database migrations (--skip-migrate)"
 fi
+
+cd "$APP_DIR"
 
 # ── Build client (optional, skip if pre-built) ───────────────────────────────
 if [ "$SKIP_BUILD" = false ]; then
