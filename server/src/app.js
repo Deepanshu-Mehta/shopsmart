@@ -18,9 +18,9 @@ const app = express();
 
 app.use(helmet());
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-// In dev, also allow the alternate Vite port in case of port collision
+// Support comma-separated list of allowed origins in FRONTEND_URL
 const allowedOrigins = new Set([
-  frontendUrl,
+  ...frontendUrl.split(',').map((u) => u.trim()),
   ...(process.env.NODE_ENV !== 'production'
     ? ['http://localhost:5173', 'http://localhost:5174']
     : []),
