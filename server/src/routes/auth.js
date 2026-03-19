@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const prisma = require('../prisma/client');
 const { requireAuth } = require('../middleware/auth');
@@ -26,25 +27,72 @@ function signToken(user) {
   });
 }
 
-// GET /auth/google — initiate OAuth
-router.get(
-  '/google',
-  passport.authenticate('google', { session: false, scope: ['profile', 'email'] })
-);
+// POST /auth/register
+router.post('/register', async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: 'Email and password are required' });
+    if (password.length < 8)
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-// GET /auth/google/callback
-router.get(
-  '/google/callback',
-  passport.authenticate('google', {
-    session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}?auth=error`,
-  }),
-  (req, res) => {
-    const token = signToken(req.user);
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing)
+      return res.status(409).json({ error: 'An account with this email already exists' });
+
+    const hashed = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({ data: { name, email, password: hashed } });
+
+    const token = signToken(user);
     res.cookie('token', token, COOKIE_OPTIONS);
-    res.redirect(process.env.FRONTEND_URL);
+    res.status(201).json({ id: user.id, email: user.email, name: user.name, role: user.role });
+  } catch (err) {
+    next(err);
   }
-);
+});
+
+// POST /auth/login
+router.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: 'Email and password are required' });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.password)
+      return res.status(401).json({ error: 'Invalid email or password' });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: 'Invalid email or password' });
+
+    const token = signToken(user);
+    res.cookie('token', token, COOKIE_OPTIONS);
+    res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /auth/google — only available when Google OAuth is configured
+if (process.env.GOOGLE_CLIENT_ID) {
+  router.get(
+    '/google',
+    passport.authenticate('google', { session: false, scope: ['profile', 'email'] })
+  );
+
+  router.get(
+    '/google/callback',
+    passport.authenticate('google', {
+      session: false,
+      failureRedirect: `${process.env.FRONTEND_URL}?auth=error`,
+    }),
+    (req, res) => {
+      const token = signToken(req.user);
+      res.cookie('token', token, COOKIE_OPTIONS);
+      res.redirect(process.env.FRONTEND_URL);
+    }
+  );
+}
 
 // GET /auth/me — current user
 router.get('/me', requireAuth, (req, res) => {
