@@ -62,12 +62,13 @@ router.post('/items', async (req, res, next) => {
     const pid = parseInt(productId, 10);
     const qty = parseInt(quantity, 10);
 
-    // Ensure product exists
-    const product = await prisma.product.findUnique({ where: { id: pid } });
-    if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
     if (isNaN(qty) || qty < 1) {
       return res.status(400).json({ error: 'quantity must be a positive integer' });
     }
+
+    // Ensure product exists
+    const product = await prisma.product.findUnique({ where: { id: pid } });
+    if (!product || !product.isActive) return res.status(404).json({ error: 'Product not found' });
 
     const cart = await getOrCreateCart(req.user.id);
 

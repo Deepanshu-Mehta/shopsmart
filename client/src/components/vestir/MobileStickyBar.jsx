@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export default function MobileStickyBar({ onAdd }) {
+export default function MobileStickyBar({ onAdd, product }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function MobileStickyBar({ onAdd }) {
             height: '100%',
           }}
         >
-          ADD TO BAG — ₹4,200
+          ADD TO BAG{product?.priceLabel ? ` — ${product.priceLabel}` : ''}
         </button>
       </div>
       <style>{`

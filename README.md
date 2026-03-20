@@ -12,7 +12,7 @@ A full-stack luxury fashion storefront built with React + Express + PostgreSQL.
 | Database | PostgreSQL |
 | Auth | Passport.js — JWT (httpOnly cookie) + optional Google OAuth2 |
 | Images | Cloudinary |
-| Deployment | AWS EC2 via GitHub Actions (primary) · Vercel (frontend) · Render (backend) |
+| Deployment | AWS EC2 via GitHub Actions · Vercel (frontend alternative) |
 
 ## Getting Started
 
@@ -159,7 +159,6 @@ bash scripts/deploy.sh --skip-build    # skip client build (frontend served from
 bash scripts/deploy.sh --skip-migrate  # skip DB migrations
 ```
 
-### Alternative — Vercel + Render
+### Alternative — Vercel (frontend only)
 
 - **Frontend**: Deploy to [Vercel](https://vercel.com) — `vercel.json` is preconfigured with SPA rewrites. Set `VITE_API_URL` to your backend URL.
-- **Backend**: Deploy to [Render](https://render.com) using `render.yaml`.

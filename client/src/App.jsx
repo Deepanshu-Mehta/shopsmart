@@ -159,7 +159,7 @@ export default function App() {
         onClose={() => setAuthOpen(false)}
         onLogin={(data) => setUser(data)}
       />
-      <MobileStickyBar onAdd={() => addToCart(activeProduct)} />
+      <MobileStickyBar onAdd={() => addToCart(activeProduct)} product={activeProduct} />
     </>
   );
 }
