@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const passport = require('./config/passport');
 const prisma = require('./prisma/client');
+const lusca = require('lusca');
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -60,6 +61,7 @@ const authLimiter = rateLimit({
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(lusca.csrf({ cookie: true }));
 app.use(passport.initialize());
 
 // Health check — verifies DB connectivity
