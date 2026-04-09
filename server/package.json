@@ -34,7 +34,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "lusca": "^1.7.0"
   },
   "jest": {
     "testEnvironment": "node",
