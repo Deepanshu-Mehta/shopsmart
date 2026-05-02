@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+tests
+coverage
+.git
+.gitignore
+*.md
+.DS_Store
+ecosystem.config.js
+eslint.config.js
