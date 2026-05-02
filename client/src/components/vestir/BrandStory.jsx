@@ -1,4 +1,4 @@
-import { useReveal } from './useReveal';
+import { motion } from 'framer-motion';
 
 const stats = [
   { label: 'Natural Fibres Only', value: '100%' },
@@ -6,22 +6,46 @@ const stats = [
   { label: 'Carbon Neutral by 2026', value: 'On Track' },
 ];
 
-export default function BrandStory() {
-  const ref = useReveal({ gridMode: true });
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
 
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+export default function BrandStory() {
   return (
     <section
-      ref={ref}
       aria-label="Brand Story"
-      className="reveal-grid brand-strip"
+      className="brand-strip"
       style={{
         background: 'var(--color-surface)',
         borderTop: '1px solid rgba(26,25,22,0.08)',
         borderBottom: '1px solid rgba(26,25,22,0.08)',
       }}
     >
-      <div
+      <motion.div
         className="brand-inner"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -29,8 +53,9 @@ export default function BrandStory() {
         }}
       >
         {stats.map((s, i) => (
-          <div
+          <motion.div
             key={s.label}
+            variants={itemVariants}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -39,7 +64,6 @@ export default function BrandStory() {
               padding: '40px 48px',
               borderRight: i < 2 ? '1px solid rgba(26,25,22,0.10)' : 'none',
               textAlign: 'center',
-              transitionDelay: `${i * 150}ms`,
             }}
           >
             <p
@@ -65,9 +89,9 @@ export default function BrandStory() {
             >
               {s.value}
             </p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <style>{`
         @media (max-width: 767px) {

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import Dashboard from './Dashboard.jsx';
 import Products from './Products.jsx';
 import ProductForm from './ProductForm.jsx';
 import Newsletter from './Newsletter.jsx';
 import Users from './Users.jsx';
+import Orders from './Orders.jsx';
 import '../../components/admin/admin.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -30,7 +32,7 @@ export default function AdminApp() {
   };
 
   if (loading) {
-    return <div className="admin-loading">Loading…</div>;
+    return <div className="admin-loading">Loading...</div>;
   }
 
   if (!user || user.role !== 'ADMIN') {
@@ -40,10 +42,12 @@ export default function AdminApp() {
   return (
     <AdminLayout user={user} onLogout={handleLogout}>
       <Routes>
-        <Route index element={<Navigate to="products" replace />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />} />
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<ProductForm />} />
         <Route path="products/:id/edit" element={<ProductForm />} />
+        <Route path="orders" element={<Orders />} />
         <Route path="newsletter" element={<Newsletter />} />
         <Route path="users" element={<Users />} />
       </Routes>

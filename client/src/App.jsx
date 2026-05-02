@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 
 import Nav from './components/vestir/Nav';
 import Hero from './components/vestir/Hero';
@@ -14,19 +15,47 @@ import ProductModal from './components/vestir/ProductModal';
 import CartDrawer from './components/vestir/CartDrawer';
 import MobileStickyBar from './components/vestir/MobileStickyBar';
 import AuthModal from './components/vestir/AuthModal';
+import Shop from './pages/Shop';
+import ProductDetail from './pages/ProductDetail';
+import { useProducts } from './components/vestir/products';
 
 const Cursor = lazy(() => import('./components/vestir/Cursor'));
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+function HomePage({ onOpenProduct, addToCart }) {
+  return (
+    <main>
+      <Hero />
+      <Ticker />
+      <Categories />
+      <ProductGrid
+        onOpenProduct={onOpenProduct}
+        onQuickAdd={(product) => addToCart(product)}
+      />
+      <BrandStory />
+      <Editorial onOpenProduct={onOpenProduct} />
+      <Press />
+      <Newsletter />
+    </main>
+  );
+}
+
 export default function App() {
-  const [cartItems, setCartItems] = useState([]); // source of truth for cart
+  const [cartItems, setCartItems] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [activeProduct, setActiveProduct] = useState(null);
   const [user, setUser] = useState(null);
+  const location = useLocation();
+  const { products } = useProducts();
 
   const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Fetch current user on mount
   useEffect(() => {
@@ -62,7 +91,6 @@ export default function App() {
     if (!product?.id) return;
 
     if (!user) {
-      // Not logged in — bump a visual-only count with a fake item
       setCartItems((prev) => {
         const existing = prev.find(
           (i) => i.product?.id === product.id && i.size === size && i.color === color
@@ -74,7 +102,6 @@ export default function App() {
       return;
     }
 
-    // Optimistic update — show immediately, replace with real server item after
     const tempId = `temp-${Date.now()}`;
     setCartItems((prev) => {
       const existing = prev.find(
@@ -95,11 +122,9 @@ export default function App() {
       });
       if (res.ok) {
         const item = await res.json();
-        // Replace temp placeholder with real server item (gives us real ID)
         setCartItems((prev) => prev.map((i) => (i.id === tempId ? item : i)));
       }
     } catch {
-      // Revert optimistic update on failure
       setCartItems((prev) => {
         const withoutTemp = prev.filter((i) => i.id !== tempId);
         const existing = withoutTemp.find(
@@ -115,6 +140,8 @@ export default function App() {
     }
   };
 
+  const isHomePage = location.pathname === '/';
+
   return (
     <>
       <Suspense fallback={null}>
@@ -127,20 +154,40 @@ export default function App() {
         onCartOpen={() => setCartOpen(true)}
         onAuthOpen={() => setAuthOpen(true)}
       />
-      <main>
-        <Hero />
-        <Ticker />
-        <Categories />
-        <ProductGrid
-          onOpenProduct={setActiveProduct}
-          onQuickAdd={(product) => addToCart(product)}
+      
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <HomePage
+              onOpenProduct={setActiveProduct}
+              addToCart={addToCart}
+            />
+          }
         />
-        <BrandStory />
-        <Editorial onOpenProduct={setActiveProduct} />
-        <Press />
-        <Newsletter />
-      </main>
-      <Footer />
+        <Route
+          path="/shop"
+          element={
+            <Shop
+              onOpenProduct={setActiveProduct}
+              onQuickAdd={(product) => addToCart(product)}
+            />
+          }
+        />
+        <Route
+          path="/product/:id"
+          element={
+            <ProductDetail
+              onAddToCart={addToCart}
+              relatedProducts={products.slice(0, 4)}
+            />
+          }
+        />
+      </Routes>
+
+      {isHomePage && <Footer />}
+      {!isHomePage && <Footer />}
+
       <ProductModal
         product={activeProduct}
         onClose={() => setActiveProduct(null)}

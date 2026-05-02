@@ -1,4 +1,4 @@
-import { useReveal } from './useReveal';
+import { motion } from 'framer-motion';
 
 const editorialProducts = [
   {
@@ -24,13 +24,10 @@ const editorialProducts = [
 ];
 
 export default function Editorial({ onOpenProduct }) {
-  const ref = useReveal();
-
   return (
     <section
       id="editorial"
-      ref={ref}
-      className="reveal editorial-section"
+      className="editorial-section"
       aria-label="Editorial Feature"
       style={{
         background: 'var(--color-invert-bg)',
@@ -56,8 +53,18 @@ export default function Editorial({ onOpenProduct }) {
       />
 
       {/* Quote */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <span
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        style={{ position: 'relative', zIndex: 1 }}
+      >
+        <motion.span
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 0.5, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.2 }}
           aria-hidden="true"
           style={{
             fontFamily: 'var(--font-display)',
@@ -67,12 +74,15 @@ export default function Editorial({ onOpenProduct }) {
             lineHeight: 0.6,
             marginBottom: 24,
             display: 'block',
-            opacity: 0.5,
           }}
         >
           {'"'}
-        </span>
-        <blockquote
+        </motion.span>
+        <motion.blockquote
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(28px, 3.5vw, 48px)',
@@ -84,8 +94,12 @@ export default function Editorial({ onOpenProduct }) {
           }}
         >
           Clothing is the armor to survive the reality of everyday life.
-        </blockquote>
-        <p
+        </motion.blockquote>
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.5 }}
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: 12,
@@ -96,11 +110,15 @@ export default function Editorial({ onOpenProduct }) {
           }}
         >
           — Karl Lagerfeld
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
       {/* Products */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, x: 40 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -109,9 +127,14 @@ export default function Editorial({ onOpenProduct }) {
           zIndex: 1,
         }}
       >
-        {editorialProducts.map((p) => (
-          <article
+        {editorialProducts.map((p, index) => (
+          <motion.article
             key={p.id}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+            whileHover={{ x: 8 }}
             data-hover
             onClick={() => onOpenProduct(p)}
             className="editorial-card"
@@ -167,9 +190,9 @@ export default function Editorial({ onOpenProduct }) {
                 Shop Now
               </span>
             </div>
-          </article>
+          </motion.article>
         ))}
-      </div>
+      </motion.div>
 
       <style>{`
         .editorial-card:hover { background: rgba(245,243,239,0.05) !important; }

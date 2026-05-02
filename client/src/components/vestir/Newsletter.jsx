@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useReveal } from './useReveal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function Newsletter() {
-  const ref = useReveal();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -31,8 +30,7 @@ export default function Newsletter() {
 
   return (
     <section
-      ref={ref}
-      className="reveal newsletter-section"
+      className="newsletter-section"
       aria-label="Newsletter signup"
       style={{
         padding: '96px 48px',
@@ -42,7 +40,11 @@ export default function Newsletter() {
         borderBottom: '1px solid rgba(26,25,22,0.12)',
       }}
     >
-      <h2
+      <motion.h2
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(36px, 6vw, 80px)',
@@ -53,9 +55,13 @@ export default function Newsletter() {
         }}
       >
         Stay in the loop.
-      </h2>
+      </motion.h2>
 
-      <p
+      <motion.p
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         style={{
           fontFamily: 'var(--font-body)',
           fontSize: 14,
@@ -69,70 +75,85 @@ export default function Newsletter() {
         }}
       >
         New arrivals, rare editorials, and quiet announcements — delivered with intention.
-      </p>
+      </motion.p>
 
-      {submitted ? (
-        <p
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 20,
-            fontStyle: 'italic',
-            color: 'var(--color-accent)',
-          }}
-        >
-          {"Thank you. You're in."}
-        </p>
-      ) : (
-        <form
-          onSubmit={handleSubmit}
-          aria-label="Email subscription"
-          style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}
-          className="newsletter-form"
-        >
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            aria-label="Email address"
-            required
+      <AnimatePresence mode="wait">
+        {submitted ? (
+          <motion.p
+            key="success"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              flex: 1,
-              padding: '16px 20px',
-              border: '1px solid rgba(26,25,22,0.12)',
-              borderRight: 'none',
-              background: 'var(--color-bg)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 13,
-              fontWeight: 300,
-              color: 'var(--color-ink)',
-              outline: 'none',
-              transition: 'border-color 300ms',
+              fontFamily: 'var(--font-display)',
+              fontSize: 20,
+              fontStyle: 'italic',
+              color: 'var(--color-accent)',
             }}
-            className="newsletter-input"
-          />
-          <button
-            type="submit"
-            data-hover
-            style={{
-              padding: '16px 28px',
-              background: 'var(--color-ink)',
-              color: 'var(--color-invert-fg)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 11,
-              fontWeight: 400,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              border: '1px solid var(--color-ink)',
-              transition: 'background 300ms',
-              whiteSpace: 'nowrap',
-            }}
-            className="newsletter-btn"
           >
-            Subscribe
-          </button>
-        </form>
-      )}
+            {"Thank you. You're in."}
+          </motion.p>
+        ) : (
+          <motion.form
+            key="form"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            onSubmit={handleSubmit}
+            aria-label="Email subscription"
+            style={{ display: 'flex', maxWidth: 480, margin: '0 auto' }}
+            className="newsletter-form"
+          >
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              aria-label="Email address"
+              required
+              style={{
+                flex: 1,
+                padding: '16px 20px',
+                border: '1px solid rgba(26,25,22,0.12)',
+                borderRight: 'none',
+                background: 'var(--color-bg)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 13,
+                fontWeight: 300,
+                color: 'var(--color-ink)',
+                outline: 'none',
+                transition: 'border-color 300ms',
+              }}
+              className="newsletter-input"
+            />
+            <motion.button
+              type="submit"
+              data-hover
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '16px 28px',
+                background: 'var(--color-ink)',
+                color: 'var(--color-invert-fg)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 11,
+                fontWeight: 400,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                border: '1px solid var(--color-ink)',
+                transition: 'background 300ms',
+                whiteSpace: 'nowrap',
+              }}
+              className="newsletter-btn"
+            >
+              Subscribe
+            </motion.button>
+          </motion.form>
+        )}
+      </AnimatePresence>
 
       <style>{`
         .newsletter-input:focus { border-color: var(--color-ink) !important; }

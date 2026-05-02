@@ -20,9 +20,21 @@ export default function AdminLayout({ user, children, onLogout }) {
 
         <nav className="admin-nav">
           <div className="admin-nav-section">
+            <div className="admin-nav-section-title">Overview</div>
+            <NavLink to="/admin/dashboard" className="admin-nav-link">
+              Dashboard
+            </NavLink>
+          </div>
+          <div className="admin-nav-section">
             <div className="admin-nav-section-title">Catalogue</div>
             <NavLink to="/admin/products" className="admin-nav-link">
               Products
+            </NavLink>
+          </div>
+          <div className="admin-nav-section">
+            <div className="admin-nav-section-title">Sales</div>
+            <NavLink to="/admin/orders" className="admin-nav-link">
+              Orders
             </NavLink>
           </div>
           <div className="admin-nav-section">

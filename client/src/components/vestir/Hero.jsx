@@ -1,4 +1,47 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const slides = [
+  {
+    season: 'Spring / Summer 2025',
+    prefix: 'THE',
+    title: 'QUIET',
+    subtitle: 'COLLECTION',
+    gradient: 'linear-gradient(160deg, #C8B99A 0%, #B8A888 30%, #A89878 60%, #C4B090 100%)',
+    label: 'SS25 Editorial',
+  },
+  {
+    season: 'Autumn / Winter 2025',
+    prefix: 'THE',
+    title: 'SHADOW',
+    subtitle: 'EDIT',
+    gradient: 'linear-gradient(160deg, #8C8880 0%, #6E6860 30%, #5A5650 60%, #787470 100%)',
+    label: 'AW25 Preview',
+  },
+  {
+    season: 'Limited Edition',
+    prefix: 'THE',
+    title: 'ATELIER',
+    subtitle: 'SERIES',
+    gradient: 'linear-gradient(160deg, #C8A96E 0%, #B8986A 30%, #A88858 60%, #D4B888 100%)',
+    label: 'Exclusive Pieces',
+  },
+];
+
 export default function Hero() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const slide = slides[currentSlide];
+
   return (
     <>
       {/* grain filter */}
@@ -19,6 +62,8 @@ export default function Hero() {
 
       <section
         aria-label="Hero"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
         style={{
           minHeight: '100vh',
           display: 'grid',
@@ -38,70 +83,90 @@ export default function Hero() {
           }}
           className="hero-text-col"
         >
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 11,
-              fontWeight: 400,
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: 'var(--color-muted)',
-              marginBottom: 24,
-              animation: 'fadeSlideUp 800ms cubic-bezier(0.16,1,0.3,1) 100ms both',
-            }}
-          >
-            Spring / Summer 2025
-          </p>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.p
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 11,
+                  fontWeight: 400,
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-muted)',
+                  marginBottom: 24,
+                }}
+              >
+                {slide.season}
+              </motion.p>
 
-          <p
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(24px, 3.5vw, 52px)',
-              fontWeight: 300,
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: 'var(--color-muted)',
-              animation: 'fadeSlideUp 800ms cubic-bezier(0.16,1,0.3,1) 250ms both',
-            }}
-          >
-            THE
-          </p>
+              <motion.p
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(24px, 3.5vw, 52px)',
+                  fontWeight: 300,
+                  letterSpacing: '0.3em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-muted)',
+                }}
+              >
+                {slide.prefix}
+              </motion.p>
 
-          <h1
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(80px, 14vw, 200px)',
-              fontWeight: 300,
-              lineHeight: 0.88,
-              letterSpacing: '-0.01em',
-              color: 'var(--color-ink)',
-              animation: 'fadeSlideUp 800ms cubic-bezier(0.16,1,0.3,1) 400ms both',
-            }}
-          >
-            QUIET
-          </h1>
+              <motion.h1
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(80px, 14vw, 200px)',
+                  fontWeight: 300,
+                  lineHeight: 0.88,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--color-ink)',
+                }}
+              >
+                {slide.title}
+              </motion.h1>
 
-          <p
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(32px, 5vw, 72px)',
-              fontWeight: 300,
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: 'var(--color-ink)',
-              animation: 'fadeSlideUp 800ms cubic-bezier(0.16,1,0.3,1) 550ms both',
-            }}
-          >
-            COLLECTION
-          </p>
+              <motion.p
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(32px, 5vw, 72px)',
+                  fontWeight: 300,
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-ink)',
+                }}
+              >
+                {slide.subtitle}
+              </motion.p>
+            </motion.div>
+          </AnimatePresence>
 
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             style={{
               marginTop: 48,
               display: 'flex',
               alignItems: 'center',
               gap: 32,
-              animation: 'fadeSlideUp 800ms cubic-bezier(0.16,1,0.3,1) 700ms both',
             }}
           >
             <a
@@ -124,8 +189,28 @@ export default function Hero() {
               Explore Now
             </a>
 
+            {/* Slide indicators */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {slides.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentSlide(idx)}
+                  aria-label={`Go to slide ${idx + 1}`}
+                  data-hover
+                  style={{
+                    width: idx === currentSlide ? 32 : 8,
+                    height: 8,
+                    background: idx === currentSlide ? 'var(--color-ink)' : 'var(--color-muted)',
+                    border: 'none',
+                    transition: 'width 300ms var(--ease-out), background 300ms',
+                    opacity: idx === currentSlide ? 1 : 0.5,
+                  }}
+                />
+              ))}
+            </div>
+
             {/* Scroll indicator */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
               <div
                 style={{
                   width: 1,
@@ -136,7 +221,7 @@ export default function Hero() {
                 }}
               />
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Image */}
@@ -145,14 +230,20 @@ export default function Hero() {
           aria-hidden="true"
           className="hero-img-col"
         >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background:
-                'linear-gradient(160deg, #C8B99A 0%, #B8A888 30%, #A89878 60%, #C4B090 100%)',
-            }}
-          />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: slide.gradient,
+              }}
+            />
+          </AnimatePresence>
           {/* grain overlay */}
           <div
             style={{
@@ -163,20 +254,27 @@ export default function Hero() {
               mixBlendMode: 'multiply',
             }}
           />
-          <p
-            style={{
-              position: 'absolute',
-              bottom: 40,
-              right: 40,
-              fontFamily: 'var(--font-display)',
-              fontSize: 13,
-              fontStyle: 'italic',
-              color: 'rgba(26,25,22,0.45)',
-              letterSpacing: '0.1em',
-            }}
-          >
-            SS25 Editorial
-          </p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={currentSlide}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              style={{
+                position: 'absolute',
+                bottom: 40,
+                right: 40,
+                fontFamily: 'var(--font-display)',
+                fontSize: 13,
+                fontStyle: 'italic',
+                color: 'rgba(26,25,22,0.45)',
+                letterSpacing: '0.1em',
+              }}
+            >
+              {slide.label}
+            </motion.p>
+          </AnimatePresence>
         </div>
       </section>
 

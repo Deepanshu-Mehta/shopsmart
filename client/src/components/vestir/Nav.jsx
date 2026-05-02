@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Nav({ cartCount, user, onLogout, onCartOpen, onAuthOpen }) {
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [pulsing, setPulsing] = useState(false);
@@ -30,8 +32,8 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen, onAuthOpen 
     document.body.style.overflow = '';
   };
 
-  const navLinks = ['New Arrivals', 'Collections', 'About', 'Stores'];
-  const navHrefs = ['#arrivals', '#categories', '#editorial', '#press'];
+  const navLinks = ['Shop', 'New Arrivals', 'Collections', 'About'];
+  const navHrefs = ['/shop', location.pathname === '/' ? '#arrivals' : '/#arrivals', location.pathname === '/' ? '#categories' : '/#categories', location.pathname === '/' ? '#editorial' : '/#editorial'];
 
   return (
     <>
@@ -95,8 +97,8 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen, onAuthOpen 
           aria-label="Main navigation"
         >
           {/* Brand */}
-          <a
-            href="#"
+          <Link
+            to="/"
             data-hover
             style={{
               fontFamily: 'var(--font-display)',
@@ -109,7 +111,7 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen, onAuthOpen 
             }}
           >
             VESTIR
-          </a>
+          </Link>
 
           {/* Center links */}
           <ul
@@ -124,21 +126,39 @@ export default function Nav({ cartCount, user, onLogout, onCartOpen, onAuthOpen 
           >
             {navLinks.map((link, i) => (
               <li key={link}>
-                <a
-                  href={navHrefs[i]}
-                  className="nav-link-hover"
-                  data-hover
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 12,
-                    fontWeight: 400,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: 'var(--color-ink)',
-                  }}
-                >
-                  {link}
-                </a>
+                {navHrefs[i].startsWith('/') ? (
+                  <Link
+                    to={navHrefs[i]}
+                    className="nav-link-hover"
+                    data-hover
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      fontWeight: 400,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-ink)',
+                    }}
+                  >
+                    {link}
+                  </Link>
+                ) : (
+                  <a
+                    href={navHrefs[i]}
+                    className="nav-link-hover"
+                    data-hover
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      fontWeight: 400,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-ink)',
+                    }}
+                  >
+                    {link}
+                  </a>
+                )}
               </li>
             ))}
           </ul>

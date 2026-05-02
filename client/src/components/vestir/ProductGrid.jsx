@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useReveal } from './useReveal';
 import { useProducts } from './products.js';
 
@@ -19,7 +20,11 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
       className="products-section"
     >
       {/* Heading */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: 'flex',
           alignItems: 'baseline',
@@ -49,10 +54,14 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
           New Arrivals
         </h2>
         <span style={{ flex: 1, height: 1, background: 'rgba(26,25,22,0.12)' }} />
-      </div>
+      </motion.div>
 
       {/* Filters */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         role="tablist"
         aria-label="Product filters"
         style={{ display: 'flex', borderBottom: '1px solid rgba(26,25,22,0.12)', marginBottom: 48 }}
@@ -79,7 +88,8 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
             }}
           >
             {f}
-            <span
+            <motion.span
+              layoutId="filter-indicator"
               style={{
                 position: 'absolute',
                 bottom: -1,
@@ -87,17 +97,17 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
                 height: 2,
                 width: activeFilter === f ? '100%' : '0%',
                 background: 'var(--color-ink)',
-                transition: 'width 300ms var(--ease-out)',
               }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Grid */}
       <div
         ref={gridRef}
-        className="reveal-grid product-grid-layout"
+        className="product-grid-layout"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -117,163 +127,175 @@ export default function ProductGrid({ onOpenProduct, onQuickAdd }) {
               textTransform: 'uppercase',
             }}
           >
-            Loading…
+            Loading...
           </div>
         ) : (
-          visible.map((p) => (
-            <article
-              key={p.id}
-              className="product-card"
-              data-hover
-              onClick={() => onOpenProduct(p)}
-              style={{ position: 'relative', overflow: 'hidden', cursor: 'none' }}
-            >
-              <div
-                style={{
-                  position: 'relative',
-                  aspectRatio: '3/4',
-                  overflow: 'hidden',
-                  marginBottom: 16,
+          <AnimatePresence mode="popLayout">
+            {visible.map((p, index) => (
+              <motion.article
+                key={p.id}
+                layout
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{
+                  duration: 0.5,
+                  delay: index * 0.05,
+                  ease: [0.16, 1, 0.3, 1],
+                  layout: { type: 'spring', stiffness: 300, damping: 30 },
                 }}
+                className="product-card"
+                data-hover
+                onClick={() => onOpenProduct(p)}
+                style={{ position: 'relative', overflow: 'hidden', cursor: 'none' }}
               >
-                {/* default img */}
-                {p.imgUrl ? (
-                  <img
-                    src={p.imgUrl}
-                    alt={p.name}
-                    className="product-img-default"
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transition: 'opacity 400ms var(--ease-out)',
-                      willChange: 'transform',
-                    }}
-                  />
-                ) : (
-                  <div
-                    className={`product-img-default ${p.imgClass}`}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      transition: 'opacity 400ms var(--ease-out)',
-                      willChange: 'transform',
-                    }}
-                  />
-                )}
-                {/* hover img */}
-                {p.hoverImgUrl ? (
-                  <img
-                    src={p.hoverImgUrl}
-                    alt={`${p.name} alternate view`}
-                    className="product-img-hover"
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      opacity: 0,
-                      border: '2px solid rgba(200,169,110,0.3)',
-                      transition: 'opacity 400ms var(--ease-out)',
-                      willChange: 'transform',
-                    }}
-                  />
-                ) : (
-                  <div
-                    className={`product-img-hover ${p.hoverClass}`}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      opacity: 0,
-                      border: '2px solid rgba(200,169,110,0.3)',
-                      transition: 'opacity 400ms var(--ease-out)',
-                      willChange: 'transform',
-                    }}
-                  />
-                )}
-                {/* quick add */}
-                <button
-                  className="quick-add-btn"
-                  aria-label={`Quick add ${p.name} to bag`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickAdd(p);
-                  }}
-                  data-hover
+                <div
                   style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: 'var(--color-ink)',
-                    color: 'var(--color-invert-fg)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 10,
-                    fontWeight: 400,
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    padding: 14,
-                    textAlign: 'center',
-                    transform: 'translateY(100%)',
-                    transition: 'transform 350ms var(--ease-out), background 300ms',
-                    border: 'none',
-                    width: '100%',
-                    willChange: 'transform',
+                    position: 'relative',
+                    aspectRatio: '3/4',
+                    overflow: 'hidden',
+                    marginBottom: 16,
                   }}
                 >
-                  ADD TO BAG
-                </button>
-              </div>
+                  {/* default img */}
+                  {p.imgUrl ? (
+                    <img
+                      src={p.imgUrl}
+                      alt={p.name}
+                      className="product-img-default"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transition: 'opacity 400ms var(--ease-out), transform 600ms var(--ease-out)',
+                        willChange: 'transform',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className={`product-img-default ${p.imgClass}`}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        transition: 'opacity 400ms var(--ease-out), transform 600ms var(--ease-out)',
+                        willChange: 'transform',
+                      }}
+                    />
+                  )}
+                  {/* hover img */}
+                  {p.hoverImgUrl ? (
+                    <img
+                      src={p.hoverImgUrl}
+                      alt={`${p.name} alternate view`}
+                      className="product-img-hover"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: 0,
+                        border: '2px solid rgba(200,169,110,0.3)',
+                        transition: 'opacity 400ms var(--ease-out)',
+                        willChange: 'transform',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className={`product-img-hover ${p.hoverClass}`}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        border: '2px solid rgba(200,169,110,0.3)',
+                        transition: 'opacity 400ms var(--ease-out)',
+                        willChange: 'transform',
+                      }}
+                    />
+                  )}
+                  {/* quick add */}
+                  <button
+                    className="quick-add-btn"
+                    aria-label={`Quick add ${p.name} to bag`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickAdd(p);
+                    }}
+                    data-hover
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      background: 'var(--color-ink)',
+                      color: 'var(--color-invert-fg)',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 10,
+                      fontWeight: 400,
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      padding: 14,
+                      textAlign: 'center',
+                      transform: 'translateY(100%)',
+                      transition: 'transform 350ms var(--ease-out), background 300ms',
+                      border: 'none',
+                      width: '100%',
+                      willChange: 'transform',
+                    }}
+                  >
+                    ADD TO BAG
+                  </button>
+                </div>
 
-              <div style={{ padding: '0 2px' }}>
-                <h3
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 14,
-                    fontWeight: 400,
-                    color: 'var(--color-ink)',
-                    marginBottom: 4,
-                  }}
-                >
-                  {p.name}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 10,
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    color: 'var(--color-muted)',
-                    marginBottom: 8,
-                  }}
-                >
-                  {p.categoryLabel}
-                </p>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 18,
-                    fontWeight: 300,
-                    color: 'var(--color-ink)',
-                  }}
-                >
-                  {p.priceLabel}
-                </p>
-              </div>
-            </article>
-          ))
+                <div style={{ padding: '0 2px' }}>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 14,
+                      fontWeight: 400,
+                      color: 'var(--color-ink)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {p.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 10,
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-muted)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    {p.categoryLabel}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 18,
+                      fontWeight: 300,
+                      color: 'var(--color-ink)',
+                    }}
+                  >
+                    {p.priceLabel}
+                  </p>
+                </div>
+              </motion.article>
+            ))}
+          </AnimatePresence>
         )}
       </div>
 
       <style>{`
-        .product-card:hover .product-img-default { opacity: 0 !important; }
+        .product-card:hover .product-img-default { opacity: 0 !important; transform: scale(1.02); }
         .product-card:hover .product-img-hover   { opacity: 1 !important; }
         .product-card:hover .quick-add-btn       { transform: translateY(0) !important; }
         .quick-add-btn:hover { background: var(--color-accent) !important; color: var(--color-ink) !important; }

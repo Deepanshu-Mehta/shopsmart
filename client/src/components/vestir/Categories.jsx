@@ -1,4 +1,4 @@
-import { useReveal } from './useReveal';
+import { motion } from 'framer-motion';
 
 const cats = [
   { name: 'Women', cls: 'cat-women' },
@@ -13,25 +13,46 @@ const ArrowIcon = () => (
   </svg>
 );
 
-export default function Categories() {
-  const ref = useReveal({ gridMode: true });
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.2,
+    },
+  },
+};
 
+const itemVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.9,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+export default function Categories() {
   return (
     <section
       id="categories"
-      ref={ref}
       aria-label="Featured Categories"
-      className="reveal-grid"
       style={{ padding: '96px 48px' }}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: 'flex',
           alignItems: 'baseline',
           gap: 24,
           marginBottom: 48,
-          opacity: 1,
-          transform: 'none',
         }}
       >
         <span
@@ -55,10 +76,14 @@ export default function Categories() {
           Shop by Category
         </h2>
         <span style={{ flex: 1, height: 1, background: 'rgba(26,25,22,0.12)' }} />
-      </div>
+      </motion.div>
 
-      <div
+      <motion.div
         className="cats-grid"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-100px' }}
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -66,10 +91,13 @@ export default function Categories() {
         }}
       >
         {cats.map((cat) => (
-          <article
+          <motion.article
             key={cat.name}
+            variants={itemVariants}
             data-hover
             className="cat-card"
+            whileHover={{ y: -8 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             style={{
               position: 'relative',
               overflow: 'hidden',
@@ -134,9 +162,9 @@ export default function Categories() {
                 <ArrowIcon />
               </span>
             </div>
-          </article>
+          </motion.article>
         ))}
-      </div>
+      </motion.div>
 
       <style>{`
         .cat-card:hover .cat-img    { transform: scale(1.04); }
