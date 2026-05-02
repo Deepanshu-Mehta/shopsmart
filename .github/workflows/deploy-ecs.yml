@@ -1,0 +1,272 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ═══════════════════════════════════════════════════
+  # Phase 1 — Testing
+  # ═══════════════════════════════════════════════════
+
+  test-server:
+    name: Server Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: vestir_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vestir_test
+      JWT_SECRET: ci-jwt-secret-for-server-tests-min32!!
+      NODE_ENV: test
+      FRONTEND_URL: http://localhost:5173
+      GOOGLE_CLIENT_ID: test-client-id
+      GOOGLE_CLIENT_SECRET: test-client-secret
+      GOOGLE_CALLBACK_URL: http://localhost:5001/auth/google/callback
+
+    defaults:
+      run:
+        working-directory: ./server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage --forceExit
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: server-coverage
+          path: server/coverage/
+          retention-days: 7
+
+  test-client:
+    name: Client Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./client
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: client-test-results
+          path: client/coverage/
+          retention-days: 7
+
+  # ═══════════════════════════════════════════════════
+  # Phase 2 — Infrastructure Provisioning (Terraform)
+  # ═══════════════════════════════════════════════════
+
+  terraform:
+    name: Terraform
+    needs: [test-server, test-client]
+    runs-on: ubuntu-latest
+
+    outputs:
+      ecr_repository_url: ${{ steps.tf-output.outputs.ecr_repository_url }}
+      ecs_cluster_name: ${{ steps.tf-output.outputs.ecs_cluster_name }}
+      ecs_service_name: ${{ steps.tf-output.outputs.ecs_service_name }}
+      alb_dns_name: ${{ steps.tf-output.outputs.alb_dns_name }}
+      cloudfront_distribution_id: ${{ steps.tf-output.outputs.cloudfront_distribution_id }}
+      s3_frontend_bucket: ${{ steps.tf-output.outputs.s3_frontend_bucket }}
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        env:
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Output
+        id: tf-output
+        run: |
+          echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+          echo "ecs_cluster_name=$(terraform output -raw ecs_cluster_name)" >> $GITHUB_OUTPUT
+          echo "ecs_service_name=$(terraform output -raw ecs_service_name)" >> $GITHUB_OUTPUT
+          echo "alb_dns_name=$(terraform output -raw alb_dns_name)" >> $GITHUB_OUTPUT
+          echo "cloudfront_distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+          echo "s3_frontend_bucket=$(terraform output -raw s3_frontend_bucket)" >> $GITHUB_OUTPUT
+
+  # ═══════════════════════════════════════════════════
+  # Phase 3 — Container Build & ECS Deployment
+  # ═══════════════════════════════════════════════════
+
+  deploy:
+    name: Build & Deploy
+    needs: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Backend: Build & Push Docker Image ──
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ needs.terraform.outputs.ecr_repository_url }}:${{ github.sha }} \
+            -t ${{ needs.terraform.outputs.ecr_repository_url }}:latest \
+            -f server/Dockerfile \
+            server/
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ needs.terraform.outputs.ecr_repository_url }}:${{ github.sha }}
+          docker push ${{ needs.terraform.outputs.ecr_repository_url }}:latest
+
+      # ── Database: Run Prisma Migrations ──
+
+      - name: Run database migrations
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npm ci
+          npx prisma migrate deploy
+
+      # ── Backend: Deploy to ECS Fargate ──
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ needs.terraform.outputs.ecs_cluster_name }} \
+            --service ${{ needs.terraform.outputs.ecs_service_name }} \
+            --force-new-deployment \
+            --no-cli-pager
+
+      - name: Wait for ECS service stability
+        run: |
+          echo "Waiting for ECS service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ needs.terraform.outputs.ecs_cluster_name }} \
+            --services ${{ needs.terraform.outputs.ecs_service_name }}
+          echo "ECS service is stable."
+
+      # ── Frontend: Build & Deploy to S3 + CloudFront ──
+
+      - name: Build frontend
+        working-directory: client
+        run: |
+          npm ci
+          VITE_API_URL=https://www.buildwithdp.xyz npm run build
+
+      - name: Deploy frontend to S3
+        run: |
+          aws s3 sync client/dist/ \
+            s3://${{ needs.terraform.outputs.s3_frontend_bucket }} \
+            --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ needs.terraform.outputs.cloudfront_distribution_id }} \
+            --paths "/*" \
+            --no-cli-pager
+
+      # ── Verify Deployment ──
+
+      - name: Verify backend health
+        run: |
+          echo "Checking backend health via ALB..."
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://${{ needs.terraform.outputs.alb_dns_name }}/api/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i/12: HTTP $STATUS — retrying in 10s..."
+            sleep 10
+          done
+          echo "Backend health check failed after 120s"
+          exit 1

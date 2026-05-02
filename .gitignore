@@ -39,5 +39,11 @@ uploads/
 /e2e/playwright-report/
 /e2e/.auth/
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+
 # Claude AI memory / project context
 .claude/
